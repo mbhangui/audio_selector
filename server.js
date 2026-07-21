@@ -13,6 +13,7 @@ const SCRIPT_DIR = '/usr/lib/audio_selector';
 const UPDATE_HELPER = path.join(SCRIPT_DIR, 'update');
 const RESTART_SCRIPT = path.join(SCRIPT_DIR, 'restart');
 const SERVICE_DIR = '/service';
+const UPDATE_LOG_FILE = path.join(OUTPUT_DIR, 'update_progress.log');
 
 app.use(express.urlencoded({ extended: true }));
 
@@ -288,7 +289,7 @@ app.post('/toolbox', (req, res) => {
     }
 });
 
-// ROUTE 1: Instantly delivers the high-visibility "Please wait" loading canvas interface view
+// ROUTE 1: Serves the immediate loading UI layout page to the browser
 app.get('/update-loading', (req, res) => {
     const isDark = req.query.theme === 'dark';
     const uiBg = isDark ? '#121212' : '#f4f6f9';
@@ -301,7 +302,6 @@ app.get('/update-loading', (req, res) => {
         <!DOCTYPE html>
         <html lang="en">
         <head>
-            <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
             <meta charset="UTF-8">
             <title>System Update Running</title>
         </head>
@@ -309,40 +309,44 @@ app.get('/update-loading', (req, res) => {
             <div style="background:${uiBox}; color:${uiText}; padding:25px; display:inline-block; border-radius:8px; border:2px solid ${uiBorder}; box-shadow:0 4px 10px rgba(0,0,0,0.1); width:90%; max-width:900px; text-align:left;">
                 <h3 id="statusTitle" style="color:#00897b; margin-top:0; font-size:1.4rem;">Please wait. Updating the system...</h3>
                 <div id="loadingIndicator" style="font-size: 1rem; font-style: italic; color: #888; margin-bottom: 15px;">
-                    Running package manager tasks in terminal foreground. Do not close or refresh this page.
+                    Running package manager tasks in terminal background to avoid network timeout blocks.
                 </div>
 
-                <div id="logContainer" style="display:none;">
-                    <pre id="terminalBox" style="background:#000000; color:#00ff00; padding:15px; border-radius:6px; font-family:SFMono-Regular, Consolas, monospace; font-size:0.85rem; max-height:500px; overflow-y:auto; white-space:pre-wrap; word-break:break-all;"></pre>
-                    <a href="/" style="color:${linkColor}; text-decoration:none; font-weight:bold; display:block; margin-top:20px; text-align:center;">← Return to Dashboard</a>
+                <div id="logContainer">
+                    <pre id="terminalBox" style="background:#000000; color:#00ff00; padding:15px; border-radius:6px; font-family:SFMono-Regular, Consolas, monospace; font-size:0.85rem; max-height:500px; overflow-y:auto; white-space:pre-wrap; word-break:break-all;">Initializing logs...</pre>
+                    <a id="backBtn" href="/" style="color:${linkColor}; text-decoration:none; font-weight:bold; display:none; margin-top:20px; text-align:center;">← Return to Dashboard</a>
                 </div>
             </div>
 
             <script>
-                // Instantly request the background upgrade execution from the backend engine
-                fetch('/run-apt-execution')
-                    .then(response => response.json())
-                    .then(data => {
-                        document.getElementById('loadingIndicator').style.display = 'none';
-                        document.getElementById('logContainer').style.display = 'block';
+                // Step A: Fire and forget trigger to kick off the update background pipeline instantly
+                fetch('/trigger-background-update')
+                    .then(() => {
+                        // Step B: Set up a polling interval timer to pull the progress log every 2 seconds safely
+                        const pollInterval = setInterval(() => {
+                            fetch('/poll-update-logs')
+                                .then(res => res.json())
+                                .then(data => {
+                                    document.getElementById('terminalBox').innerText = data.output;
+                                    // Scroll terminal dynamically to the bottom line
+                                    const box = document.getElementById('terminalBox');
+                                    box.scrollTop = box.scrollHeight;
 
-                        if (data.success) {
-                            document.getElementById('statusTitle').innerText = 'Update Execution Log';
-                            document.getElementById('terminalBox').innerText = data.output;
-                        } else {
-                            document.getElementById('statusTitle').innerText = 'Update Failed!';
-                            document.getElementById('statusTitle').style.color = '#cc0000';
-                            document.getElementById('terminalBox').innerText = data.output;
-                            document.getElementById('terminalBox').style.color = '#ff3333';
-                        }
-                    })
-                    .catch(err => {
-                        document.getElementById('loadingIndicator').style.display = 'none';
-                        document.getElementById('logContainer').style.display = 'block';
-                        document.getElementById('statusTitle').innerText = 'Connection Lost';
-                        document.getElementById('statusTitle').style.color = '#cc0000';
-                        document.getElementById('terminalBox').innerText = 'Network request tracking failed: ' + err.message;
-                        document.getElementById('terminalBox').style.color = '#ff3333';
+                                    if (data.status === 'completed') {
+                                        clearInterval(pollInterval);
+                                        document.getElementById('statusTitle').innerText = 'Update Execution Log';
+                                        document.getElementById('loadingIndicator').style.display = 'none';
+                                        document.getElementById('backBtn').style.display = 'block';
+                                    } else if (data.status === 'failed') {
+                                        clearInterval(pollInterval);
+                                        document.getElementById('statusTitle').innerText = 'Update Failed!';
+                                        document.getElementById('statusTitle').style.color = '#cc0000';
+                                        document.getElementById('terminalBox').style.color = '#ff3333';
+                                        document.getElementById('loadingIndicator').style.display = 'none';
+                                        document.getElementById('backBtn').style.display = 'block';
+                                    }
+                                });
+                        }, 2000);
                     });
             </script>
         </body>
@@ -350,23 +354,58 @@ app.get('/update-loading', (req, res) => {
     `);
 });
 
-// ROUTE 2: Executes the system upgrade tools synchronously directly inside the foreground terminal
-app.get('/run-apt-execution', (req, res) => {
+// ROUTE 2: Fires and detaches the execution script immediately, saving output to disk file
+app.get('/trigger-background-update', (req, res) => {
+    // Send immediate response back to browser to instantly break the network timeout trap
+    res.json({ started: true });
+
     try {
-        console.log(`\n--- [PACKAGED UPDATE TRIGGER] EXECUTING DISTRIBUTION UPGRADE ---`);
-        // Execute your local packaged helper script with separate argument strings
-        const updateOutput = execSync(`sudo ${UPDATE_HELPER} update`).toString();
-        const upgradeOutput = execSync(`sudo ${UPDATE_HELPER} upgrade`).toString();
-        const combinedOutput = `=== UPDATE LOG ===\n${updateOutput}\n\n=== UPGRADE LOG ===\n${upgradeOutput}`;
-        console.log(`--- [PACKAGED UPDATE TRIGGER] FINISHED CLEANLY ---\n`);
-        res.json({ success: true, output: combinedOutput });
+        if (!fs.existsSync(OUTPUT_DIR)) fs.mkdirSync(OUTPUT_DIR, { recursive: true });
+
+        // Write fresh processing indicator state line down to file
+        fs.writeFileSync(UPDATE_LOG_FILE, "=== SYSTEM UPDATE IN PROGRESS ===\nRunning package list sync updates...\n", 'utf8');
+
+        console.log(`\n--- [PACKAGED UPDATE TRIGGER] FORKING UPGRADE TO BACKGROUND PROCESS ---`);
+
+        // Spawns shell execution thread natively detached, routing all logs live to the progress file
+        exec(`sudo ${UPDATE_HELPER} update > ${UPDATE_LOG_FILE} 2>&1 && echo "\nRunning system package upgrade installations..." >> ${UPDATE_LOG_FILE} && sudo ${UPDATE_HELPER} upgrade >> ${UPDATE_LOG_FILE} 2>&1`, (err) => {
+            if (err) {
+                console.error("[BACKGROUND UPDATE FAILURE]:", err.message);
+                fs.appendFileSync(UPDATE_LOG_FILE, `\n\n=== EXEUCTION FAILURE ===\n${err.message}\nSTATUS=FAILED\n`);
+            } else {
+                console.log(`--- [PACKAGED UPDATE TRIGGER] BACKGROUND THREAD COMPLETED CLEANLY ---\n`);
+                fs.appendFileSync(UPDATE_LOG_FILE, `\n\n=== UPDATE COMPLETED SUCCESSFULLY ===\nSTATUS=COMPLETED\n`);
+            }
+        });
     } catch (err) {
-        console.error("[PACKAGED UPDATE ERROR]:", err.message);
-        const errLog = err.stdout ? err.stdout.toString() : '';
-        const errStderr = err.stderr ? err.stderr.toString() : '';
-        const combinedError = `ERROR MESSAGE:\n${err.message}\n\nSTDOUT:\n${errLog}\n\nSTDERR:\n${errStderr}`;
-        res.json({ success: false, output: combinedError });
+        console.error(err.message);
+        fs.writeFileSync(UPDATE_LOG_FILE, `CRITICAL INIT FAILURE:\n${err.message}\nSTATUS=FAILED\n`, 'utf8');
     }
+});
+
+// ROUTE 3: Safe tracking hook allowing browser to read the text file live in chunks
+app.get('/poll-update-logs', (req, res) => {
+    let output = "Waiting for background worker initialization thread...";
+    let status = 'running';
+
+    try {
+        if (fs.existsSync(UPDATE_LOG_FILE)) {
+            output = fs.readFileSync(UPDATE_LOG_FILE, 'utf8');
+
+            // Check for explicit done state tags written at final shell termination
+            if (output.includes('STATUS=COMPLETED')) {
+                status = 'completed';
+                output = output.replace('STATUS=COMPLETED', '');
+            } else if (output.includes('STATUS=FAILED')) {
+                status = 'failed';
+                output = output.replace('STATUS=FAILED', '');
+            }
+        }
+    } catch (e) {
+        output = "Reading progress log failed: " + e.message;
+    }
+
+    res.json({ status: status, output: output });
 });
 
 app.get('/sys-reboot', (req, res) => {
