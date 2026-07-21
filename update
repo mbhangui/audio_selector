@@ -2,16 +2,16 @@
 case $1 in
 	update)
 	if [ -f /etc/debian_version ] ; then
-		sudo apt update
+		exec sudo env DEBIAN_FRONTEND=noninteractive apt update -y
 	elif [ -f /usr/bin/dnf ] ; then
-		sudo dnf -y update
+		exec sudo dnf -y update
 	fi
 	;;
 	upgrade)
 	if [ -f /etc/debian_version ] ; then
-		sudo apt upgrade
+		exec sudo env DEBIAN_FRONTEND=noninteractive apt upgrade -y
 	else
-		sudo dnf -y upgrade
+		exec sudo dnf -y upgrade
 	fi
 	;;
 esac

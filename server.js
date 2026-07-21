@@ -1,4 +1,4 @@
-// $Id: server.js,v 1.1 2026-07-21 01:19:54+05:30 Cprogrammer Exp mbhangui $
+// $Id: server.js,v 1.2 2026-07-21 19:52:08+05:30 Cprogrammer Exp mbhangui $
 const express = require('express');
 const { execSync, exec } = require('child_process');
 const fs = require('fs');
@@ -10,8 +10,7 @@ const PORT = process.env.PORT || 9095;
 const OUTPUT_DIR = path.join(process.env.HOME, '.audio_selector');
 const OUTPUT_FILE = path.join(OUTPUT_DIR, 'alsa_device');
 const SCRIPT_DIR = '/usr/lib/audio_selector';
-const UPDATE_SCRIPT = path.join(SCRIPT_DIR, 'update update');
-const UPGRADE_SCRIPT = path.join(SCRIPT_DIR, 'update upgrade');
+const UPDATE_HELPER = path.join(SCRIPT_DIR, 'update');
 const RESTART_SCRIPT = path.join(SCRIPT_DIR, 'restart');
 const SERVICE_DIR = '/service';
 
@@ -626,6 +625,9 @@ server.on('error', (err) => {
 });
 
 // $Log: server.js,v $
+// Revision 1.2  2026-07-21 19:52:08+05:30  Cprogrammer
+// added styles.css
+//
 // Revision 1.1  2026-07-21 01:19:54+05:30  Cprogrammer
 // Initial revision
 //
