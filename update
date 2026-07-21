@@ -1,0 +1,17 @@
+#!/bin/sh
+case $1 in
+	update)
+	if [ -f /etc/debian_version ] ; then
+		sudo apt update
+	elif [ -f /usr/bin/dnf ] ; then
+		sudo dnf -y update
+	fi
+	;;
+	upgrade)
+	if [ -f /etc/debian_version ] ; then
+		sudo apt upgrade
+	else
+		sudo dnf -y upgrade
+	fi
+	;;
+esac

@@ -1,0 +1,26 @@
+#!/bin/sh
+set -e
+upgrade=0
+if [ "$1" = "configure" ]; then
+	if [ ! " $2" = " " ] ; then
+		upgrade=1
+    	if [ -x /usr/lib/audio_selector/create_service ]; then
+        	/usr/lib/audio_selector/create_service
+    	fi
+		exit 0
+	fi
+    TARGET_USER=$(id -nu 1000 2>/dev/null || echo "pi")
+    TARGET_HOME=$(eval echo "~${TARGET_USER}")
+    if [ -d "${TARGET_HOME}" ]; then
+        CONFIG_DIR="${TARGET_HOME}/.audio_selector"
+        mkdir -p "${CONFIG_DIR}"
+        chown -R 1000:1000 "${CONFIG_DIR}"
+        chmod 755 "${CONFIG_DIR}"
+    fi
+    if [ -x /usr/lib/audio_selector/create_service ]; then
+        /usr/lib/audio_selector/create_service 8080
+    fi
+fi
+
+#DEBHELPER#
+exit 0

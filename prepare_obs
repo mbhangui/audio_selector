@@ -1,0 +1,47 @@
+#!/bin/sh
+#
+# This script prepares artifacts that can be downloaded for openSUSE build service
+# It creates name.tar.gz, debian.tar.gz, name.spec name.changes and PKGBUILD
+#
+set -e
+if [ $# -ne 1 ] ; then
+  echo "USAGE: prepare_obs name" 1>&2
+  exit 1
+fi
+name=$1
+curdir=$PWD
+version=$(cat conf-version)
+stage=$HOME/stage
+/bin/rm -rf $stage
+mkdir -p $stage
+if [ ! -f conf-release ] ; then
+    echo 1.1 > conf-release
+fi
+echo "Preparing $name-$version"
+cp -rp . $stage/$name-$version
+cd $stage/$name-$version
+
+if [ ! -f $name.changes ] ; then
+  # This will build the $name.changes file
+  ./catChangeLog --changes > audio-selector.changes
+fi
+
+# now build the spec and dsc files
+make audio-selector.spec audio-selector.dsc debian.changelog
+
+cp audio-selector.spec audio-selector.dsc audio-selector.changes debian.* ..
+
+echo cleaning $name-$version
+set +e
+make clean >/dev/null 2>&1
+/bin/rm -rf node_modules
+npm install --production
+set -e
+
+/bin/rm -rf .git RCS
+echo "creating archive $name-$version.tar.gz"
+tar --exclude='audio-selector.spec' --exclude='audio-selector.dsc' --exclude='debian.*' \
+	-czf ../audio-selector-1.0.tar.gz node_modules \
+	server.js index.html styles.css create_service restart update
+cd ..
+/bin/rm -rf $name-$version

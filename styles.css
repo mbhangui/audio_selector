@@ -1,0 +1,238 @@
+:root {
+    --bg-color: #f4f6f9;
+    --text-color: #333333;
+    --box-bg: #ffffff;
+    --border-color: #cccccc;
+    --accent-color: #0066cc;
+    --hover-bg: #f0f4f8;
+    --danger-color: #cc0000;
+    --icon-color: #111111;
+}
+
+[data-theme="dark"] {
+    --bg-color: #121212;
+    --text-color: #e0e0e0;
+    --box-bg: #1e1e1e;
+    --border-color: #444444;
+    --accent-color: #bb86fc;
+    --hover-bg: #2d2d2d;
+    --danger-color: #ff6b6b;
+    --icon-color: #ffb74d;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+    box-sizing: border-box;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.workspace-container {
+    display: flex;
+    gap: 40px;
+    align-items: flex-start;
+    justify-content: center;
+    max-width: 1200px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.selector-box {
+    position: relative;
+    background-color: var(--box-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    padding: 50px 24px 30px 24px;
+    flex: 1;
+    min-width: 480px;
+    max-width: 580px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    box-sizing: border-box;
+    transition: background-color 0.3s, border-color 0.3s;
+}
+
+.header-text {
+    position: absolute;
+    top: -14px;
+    background-color: var(--box-bg);
+    padding: 0 10px;
+    white-space: nowrap;
+    transition: background-color 0.3s;
+}
+
+.title-left {
+    left: 20px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--accent-color);
+}
+
+.title-right {
+    right: 80px; 
+    font-size: 0.95rem;
+    font-weight: normal;
+    color: var(--text-color);
+    opacity: 0.8;
+    font-family: SFMono-Regular, Consolas, monospace;
+    top: -11px;
+}
+
+.rpi-logo {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    width: 40px;
+    height: 40px;
+}
+
+.options-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 15px;
+    margin-bottom: 20px;
+    max-height: 240px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.radio-label, .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.radio-label:hover, .checkbox-label:hover {
+    background-color: var(--hover-bg);
+}
+
+.radio-inline-row {
+    display: flex;
+    gap: 20px;
+    margin: 20px 0;
+    justify-content: flex-start;
+}
+
+.tool-inline-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 25px;
+    width: 100%;
+}
+
+select {
+    flex: 1;
+    padding: 10px;
+    border-radius: 6px;
+    background-color: var(--box-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    font-size: 0.95rem;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.divider {
+    border: 0;
+    border-top: 1px solid var(--border-color);
+    margin: 20px 0;
+}
+
+.submit-btn {
+    background-color: var(--accent-color);
+    color: #ffffff;
+    border: none;
+    padding: 12px 24px;
+    font-size: 1rem;
+    font-weight: bold;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.submit-btn:hover {
+    opacity: 0.9;
+}
+
+.tool-ok-btn {
+    padding: 11px 24px;
+    font-size: 0.95rem;
+}
+
+.w-100 {
+    width: 100%;
+}
+
+.theme-icon-btn {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--icon-color);
+    transition: color 0.2s, transform 0.2s;
+}
+
+.theme-icon-btn:hover {
+    transform: scale(1.1);
+}
+
+.theme-icon-btn svg {
+    width: 28px;
+    height: 28px;
+    fill: currentColor;
+}
+
+.system-action-grid {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    margin-top: 20px;
+    width: 100%;
+    justify-content: space-between;
+}
+
+.system-action-grid button {
+    flex: 1;
+    padding: 12px 4px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: bold;
+    background-color: transparent;
+    transition: background-color 0.2s, color 0.2s;
+    box-sizing: border-box;
+    white-space: nowrap;
+    text-align: center;
+}
+
+.status-btn { color: #d81b60; border: 1px solid #d81b60; }
+.status-btn:hover { background-color: #d81b60; color: #ffffff; }
+
+.update-btn { color: #00897b; border: 1px solid #00897b; }
+.update-btn:hover { background-color: #00897b; color: #ffffff; }
+
+.reboot-btn { color: #e65100; border: 1px solid #e65100; }
+.reboot-btn:hover { background-color: #e65100; color: #ffffff; }
+
+.shutdown-btn { color: var(--danger-color); border: 1px solid var(--danger-color); }
+.shutdown-btn:hover { background-color: var(--danger-color); color: #ffffff; }

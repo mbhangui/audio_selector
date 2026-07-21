@@ -1,0 +1,20 @@
+[Unit]
+Description=ALSA Audio Selector and Tool Box Management Dashboard
+After=network.target sound.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/usr/lib/audio_selector
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node /usr/lib/audio_selector/server.js
+Restart=always
+RestartSec=5
+
+# Safety restrictions for production environments
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,16 @@
+{
+  "name": "audio_selector",
+  "version": "1.0.0",
+  "description": "",
+  "main": "audio_selector.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.2.1",
+    "inquirer": "^14.0.2"
+  }
+}

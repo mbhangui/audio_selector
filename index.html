@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Selector & Tool Box</title>
+    <!-- Offloaded styles into server asset framework link -->
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+    <div class="workspace-container">
+        <!-- LEFT PANEL -->
+        <form action="/select" method="POST" id="audioForm" style="flex: 1; max-width: 500px;">
+            <input type="hidden" class="themeInputClass" name="theme" value="light">
+            <div class="selector-box">
+                <span class="header-text title-left">Audio Selector</span>
+                <span class="header-text title-right">%%HOSTNAME%%</span>
+                %%LOGO%%
+                <div class="options-container">
+                    %%OPTIONS%%
+                </div>
+                <hr class="divider">
+                <label class="checkbox-label">
+                    <input type="checkbox" name="dsd" value="true" %%DSD_CHECKED%%> 
+                    <span>This device supports Native DSD playback</span>
+                </label>
+                <div class="footer-controls">
+                    <button type="submit" class="submit-btn w-100">OK</button>
+                </div>
+            </div>
+        </form>
+
+        <!-- RIGHT PANEL -->
+        <form action="/toolbox" method="POST" id="toolForm" style="flex: 1; max-width: 580px;">
+            <input type="hidden" class="themeInputClass" name="theme" value="light">
+            <div class="selector-box">
+                <span class="header-text title-left">Tool Box</span>
+                
+                <button type="button" class="theme-icon-btn" id="themeToggle" title="Toggle Theme">
+                    <svg id="themeIcon" viewBox="0 0 24 24"></svg>
+                </button>
+
+                <div class="radio-inline-row">
+                    <label class="radio-label">
+                        <input type="radio" name="action" value="restart" checked>
+                        <span>Restart</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="action" value="up">
+                        <span>Up</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="action" value="down">
+                        <span>Down</span>
+                    </label>
+                </div>
+
+                <div class="tool-inline-group">
+                    <select name="service" required>
+                        <option value="" disabled selected>Select Services...</option>
+                        %%SERVICES_OPTIONS%%
+                    </select>
+                    <button type="submit" class="submit-btn tool-ok-btn">OK</button>
+                </div>
+
+                <hr class="divider">
+
+                <div class="system-action-grid">
+                    <button type="button" class="status-btn" id="statusToggle">Service Status</button>
+                    <button type="button" class="update-btn" id="updateToggle">Update</button>
+                    <button type="button" class="reboot-btn" id="rebootToggle">Reboot</button>
+                    <button type="button" class="shutdown-btn" id="shutdownToggle">Shutdown</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const toggleBtn = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const statusBtn = document.getElementById('statusToggle');
+        const updateBtn = document.getElementById('updateToggle');
+        const rebootBtn = document.getElementById('rebootToggle');
+        const shutdownBtn = document.getElementById('shutdownToggle');
+        const themeInputs = document.querySelectorAll('.themeInputClass');
+
+        const sunSvgPath = '<path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-1.06-1.06zm1.06-12.37c-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.38.39-1.02 0-1.41zM5.99 16.95l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.39.39-1.03 0-1.41s-1.02-.39-1.41 0z"/>';
+        const moonSvgPath = '<path d="M21.75 16.25A9 9 0 0 1 11.5 6a1 1 0 0 0-1-1 9 9 0 1 0 12.25 12.25 1 1 0 0 0-1-1z"/>';
+        
+        const savedTheme = localStorage.getItem('theme') || 
+            (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        
+        setTheme(savedTheme);
+
+        toggleBtn.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            setTheme(currentTheme === 'dark' ? 'light' : 'dark');
+        });
+
+        statusBtn.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            window.location.href = `/service-status?theme=${currentTheme}`;
+        });
+
+        updateBtn.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            if (confirm("Are you sure you want to run package updates now?")) {
+                window.location.href = `/update-loading?theme=${currentTheme}`;
+            }
+        });
+
+        rebootBtn.addEventListener('click', () => {
+            if (confirm("Are you sure you want to reboot the system host machine now?")) {
+                window.location.href = "/sys-reboot";
+            }
+        });
+
+        shutdownBtn.addEventListener('click', () => {
+            if (confirm("Are you sure you want to completely power off the host machine now?")) {
+                window.location.href = "/sys-shutdown";
+            }
+        });
+
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            themeInputs.forEach(input => input.value = theme);
+            
+            if (theme === 'dark') {
+                themeIcon.innerHTML = sunSvgPath;
+                toggleBtn.title = "Switch to Light Mode";
+            } else {
+                themeIcon.innerHTML = moonSvgPath;
+                toggleBtn.title = "Switch to Dark Mode";
+            }
+        }
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,12 @@
+Source: audio-selector
+Section: utils
+Priority: optional
+Maintainer: Package Builder <audio-selector@indimail.org>
+Build-Depends: debhelper-compat (= 13), nodejs
+Standards-Version: 4.6.2
+
+Package: audio-selector
+Architecture: all
+Depends: ${misc:Depends}, nodejs, daemontools, alsa-utils
+Description: ALSA Audio Selector and Tool Box Management Dashboard
+ A Node.js web application dashboard running on port 9095 to select ALSA audio cards, toggle Native DSD support, manage daemontools/systemd services, and handle platform reboots.

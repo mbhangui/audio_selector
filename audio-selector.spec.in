@@ -1,0 +1,78 @@
+#
+# $Id: audio-selector.spec.in,v 1.2 2026-07-21 01:31:02+05:30 Cprogrammer Exp mbhangui $
+#
+Name:           audio-selector
+Version:        @version@
+Release:        @release@%{?dist}
+Summary:        ALSA Audio Selector and Tool Box Management Dashboard
+License:        MIT
+URL:            https://github.com/mbhangui/audio_selector
+Source0:        %{name}-%{version}.tar.gz
+BuildArch:      noarch
+BuildRequires:  nodejs
+Requires:       nodejs
+Requires:       daemontools
+Requires:       alsa-utils
+
+%description
+A Node.js web application dashboard running on port 9095 to select ALSA audio cards, toggle Native DSD support, manage daemontools/systemd services, and handle platform reboots.
+
+%prep
+%setup -q -c
+
+%build
+
+%install
+rm -rf %{buildroot}
+mkdir -p %{buildroot}/usr/lib/audio_selector
+cp -r server.js index.html styles.css create_service restart update node_modules %{buildroot}/usr/lib/audio_selector/
+
+%post
+argv1=$1
+if [ -z "$argv1" ] ; then
+    argv1=0
+fi
+if [ $argv1 -eq 2 ] ; then # upgrade
+    if [ -x /usr/lib/audio_selector/create_service ]; then
+        /usr/lib/audio_selector/create_service
+    fi
+    exit 0
+fi
+TARGET_USER=$(id -nu 1000 2>/dev/null || echo "pi")
+TARGET_HOME=$(eval echo "~${TARGET_USER}")
+if [ -d "${TARGET_HOME}" ]; then
+    CONFIG_DIR="${TARGET_HOME}/.audio_selector"
+    mkdir -p "${CONFIG_DIR}"
+    chown -R 1000:1000 "${CONFIG_DIR}"
+    chmod 755 "${CONFIG_DIR}"
+fi
+if [ -x /usr/lib/audio_selector/create_service ]; then
+    /usr/lib/audio_selector/create_service 8080
+fi
+
+%preun
+argv1=$1
+if [ -z "$argv1" ] ; then
+  argv1=0
+fi
+# we are doing upgrade
+if [ $argv1 -eq 1 ] ; then
+  exit 0
+fi
+if [ -d /service/audio-selector ]; then
+    svc -dx /service/audio-selector /service/audio-selector/log || true
+    rm -rf /service/audio-selector
+fi
+
+%files
+%defattr(-,root,root,-)
+/usr/lib/audio_selector/node_modules/
+%dir %attr(755,root,root)  /usr/lib/audio_selector
+%attr(0644,root,root)      /usr/lib/audio_selector/server.js
+%attr(0644,root,root)      /usr/lib/audio_selector/styles.css
+%attr(0644,root,root)      /usr/lib/audio_selector/index.html
+%attr(0755,root,root)      /usr/lib/audio_selector/create_service
+%attr(0755,root,root)      /usr/lib/audio_selector/restart
+%attr(0755,root,root)      /usr/lib/audio_selector/update
+
+%changelog

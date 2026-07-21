@@ -1,0 +1,69 @@
+#!/bin/sh
+#
+# $Id: create_service,v 1.1 2026-07-21 01:20:46+05:30 Cprogrammer Exp mbhangui $
+#
+if [ $# -eq 1 ] ; then
+	port=$1
+else
+	port=""
+fi
+if [ "$(id -u)" -ne 0 ] ; then
+	echo "You are not root" 1>&2
+	exit 1
+fi
+
+do_create=0
+target_dir=/service/audio-selector
+if [ ! -d /service/audio-selector ] ; then
+	do_create=1
+	target_dir=/service/.audio-selector
+	mkdir -p $target_dir/log
+	mkdir -p $target_dir/variables
+	if [ -n "$port" ] ; then
+		echo $port > $target_dir/variables/PORT
+	else
+		echo 8080 > $target_dir/variables/PORT
+	fi
+else
+	if [ ! -f $target_dir/variables/PORT ] ; then
+		if [ -n "$port" ] ; then
+			echo $port > $target_dir/variables/PORT
+		else
+			echo 8080 > $target_dir/variables/PORT
+		fi
+	fi
+fi
+
+(
+echo "#!/bin/sh"
+echo "set -e"
+echo ""
+echo "exec 2>&1"
+echo "[ -z "\$PORT" ] && PORT=\$(cat ./variables/PORT)"
+echo "home=\$(getent passwd 1000 | awk -F: '{print \$6}')"
+echo "user=\$(getent passwd 1000 | awk -F: '{print \$1}')"
+echo "cd /usr/lib/audio_selector"
+echo "exec setuidgid -es \$user node server.js"
+) > $target_dir/run
+chmod +x $target_dir/run
+
+(
+echo "#!/bin/sh"
+echo "exec /usr/bin/setuidgid qmaill \\"
+echo "/usr/sbin/multilog t /var/log/svc/audio-selector"
+) > $target_dir/log/run
+chmod +x $target_dir/log/run
+
+if [ $do_create -eq 1 ] ; then
+	mv $target_dir /service/audio-selector
+	svps -h
+else
+	svc -r /service/audio-selector
+fi
+
+#
+# $Log: create_service,v $
+# Revision 1.1  2026-07-21 01:20:46+05:30  Cprogrammer
+# Initial revision
+#
+#

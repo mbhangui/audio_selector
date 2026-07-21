@@ -1,0 +1,54 @@
+name: audio-selector obs trigger
+
+on:
+  push:
+    paths:
+      - '**'
+      - .github/workflows/audio-selector-obs.yml
+      - '!**/obs/*'
+      - '!**/doc/*'
+      - '!**.md'
+      - '!**.png'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: checkout_audio-selector
+      uses: actions/checkout@v4
+
+    - name: prepare obs
+      run: |
+        sudo apt-get install nodejs
+        ./prepare_obs audio-selector
+    - uses: actions/upload-artifact@v4
+      with:
+        name: audio-selector
+        path: ~/stage
+    - shell: bash
+      name: trigger_obs
+      run: |
+        # create ssh environment
+        mkdir ~/.ssh
+        echo "${{secrets.sf_private_key}}" > ~/.private_key
+        chmod 600 ~/.private_key
+        echo "${{secrets.sf_known_hosts}}" > ~/.ssh/known_hosts
+        # create gpg environment
+        echo "Importing gpg key"
+        echo "${{secrets.software_key}}" | gpg --batch --import
+        echo "Listing gpg key"
+        gpg --list-secret-keys --keyid-format LONG
+        # create archive and transfer
+        cd ~/stage
+        tar cvfz $GITHUB_WORKSPACE/audio-selector-obs.tar.gz *
+        # create detached signature for obs archive
+        echo "${{secrets.software_passphrase}}" | gpg2 --pinentry-mode loopback \
+          --passphrase-fd 0 --default-key "${{secrets.software_user}}" \
+          -o audio-selector-obs.sig --detach-sig $GITHUB_WORKSPACE/audio-selector-obs.tar.gz
+        # copy to /home/frs/project/indimail
+        scp -q -i ~/.private_key $GITHUB_WORKSPACE/audio-selector-obs.tar.gz \
+          ~/stage/audio-selector-obs.sig "${{secrets.sf_user}}:${{secrets.sf_upload_path}}"
+        rm -f ~/.private_key ~/.ssh/known_hosts $GITHUB_WORKSPACE/audio-selector-obs.tar.gz
+        rm -rf ~/stage
