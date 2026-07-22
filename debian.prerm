@@ -3,12 +3,12 @@ set -e
 
 # we are doing upgrade
 if [ " $1" = " upgrade" -o " $1" = " deconfigure" ] ; then
-	exit 0
+    exit 0
 fi
 
 if [ "$1" = "remove" ] || [ "$1" = "deconfigure" ]; then
     if [ -d /service/audio-selector ]; then
-		mv /service/audio-selector /service/.audio-selector
+        mv /service/audio-selector /service/.audio-selector
         svc -dx /service/.audio-selector /service/.audio-selector/log || true
         rm -rf /service/.audio-selector
     fi

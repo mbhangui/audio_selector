@@ -2,13 +2,13 @@
 set -e
 upgrade=0
 if [ "$1" = "configure" ]; then
-	if [ ! " $2" = " " ] ; then
-		upgrade=1
-    	if [ -x /usr/lib/audio_selector/create_service ]; then
-        	/usr/lib/audio_selector/create_service
-    	fi
-		exit 0
-	fi
+    if [ ! " $2" = " " ] ; then
+        upgrade=1
+        if [ -x /usr/lib/audio_selector/create_service ]; then
+            /usr/lib/audio_selector/create_service
+        fi
+        exit 0
+    fi
     TARGET_USER=$(id -nu 1000 2>/dev/null || echo "pi")
     TARGET_HOME=$(eval echo "~${TARGET_USER}")
     if [ -d "${TARGET_HOME}" ]; then
