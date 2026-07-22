@@ -1,4 +1,4 @@
-// $Id: server.js,v 1.2 2026-07-21 19:52:08+05:30 Cprogrammer Exp mbhangui $
+// $Id: server.js,v 1.3 2026-07-22 22:00:47+05:30 Cprogrammer Exp mbhangui $
 const express = require('express');
 const { execSync, exec } = require('child_process');
 const fs = require('fs');
@@ -664,6 +664,9 @@ server.on('error', (err) => {
 });
 
 // $Log: server.js,v $
+// Revision 1.3  2026-07-22 22:00:47+05:30  Cprogrammer
+// run update in background
+//
 // Revision 1.2  2026-07-21 19:52:08+05:30  Cprogrammer
 // added styles.css
 //

@@ -1,3 +1,13 @@
 #!/bin/sh
-sudo svc -r /service/librespot /service/squeezelite /service/shairport-sync
+for i in librespot squeezelite shairport-sync
+do
+	if [ -d /service/$i ] ; then
+		if [ -z "$svc" ] ; then
+			svc="/service/$i"
+		else
+			svc="$svc /service/$i"
+		fi
+	fi
+done
+sudo svc -r $svc
 exec sudo svc -o /service/priority

@@ -6,6 +6,7 @@ edit = sed \
 	-e 's}@prefix\@}$(prefix)}g'
 
 ALL: audio-selector.spec audio-selector.dsc debian.changelog
+
 clean:
 	rm -f audio-selector.spec audio-selector.dsc debian.changelog
 

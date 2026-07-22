@@ -1,68 +1,421 @@
 #!/bin/sh
 #
-# $Id: create_service,v 1.1 2026-07-21 01:20:46+05:30 Cprogrammer Exp mbhangui $
+# $Id: create_service,v 1.2 2026-07-22 22:00:05+05:30 Cprogrammer Exp mbhangui $
 #
-if [ $# -eq 1 ] ; then
-	port=$1
-else
-	port=""
-fi
-if [ "$(id -u)" -ne 0 ] ; then
-	echo "You are not root" 1>&2
-	exit 1
-fi
 
-do_create=0
-target_dir=/service/audio-selector
-if [ ! -d /service/audio-selector ] ; then
-	do_create=1
-	target_dir=/service/.audio-selector
-	mkdir -p $target_dir/log
-	mkdir -p $target_dir/variables
-	if [ -n "$port" ] ; then
-		echo $port > $target_dir/variables/PORT
-	else
-		echo 8080 > $target_dir/variables/PORT
-	fi
+usage()
+{
+if [ -f /usr/bin/less ] ; then
+	MORE=/usr/bin/less
 else
-	if [ ! -f $target_dir/variables/PORT ] ; then
+	MORE=/usr/bin/more
+fi
+echo "Press ENTER for options, Cntrl C to quit" 1>&2
+read key
+$MORE 1>&2 <<EOF
+Usage: create_service [OPTION]
+
+Known values for OPTION are:
+
+-A | --audio
+Create audio-selector service
+
+-a | --airport
+Create shairport-sync service
+
+-s | --squeezelite
+Create squeezelite service for Lyrion Music Server and Roon Endpoint
+
+-l | --librespot
+Create librespot service for Spotify Premium Subscription
+
+-h
+--help
+  display this help and exit
+EOF
+	exit $1
+}
+
+process_cmdline()
+{
+	SYSTEM=$(uname -s)
+	case "$OS" in
+		Darwin)
+		if [ -x /opt/local/bin/getopt ] ; then
+			getopt="/opt/local/bin/getopt"
+		elif [ -x /usr/local/bin/getopt ] ; then
+			getopt="/usr/local/bin/getopt"
+		else
+			getopt=getopt
+		fi
+		;;
+		*)
+		getopt=getopt
+		;;
+	esac
+
+	OPTS=`$getopt -o aAslh --long audio,airport,squeezelite,librespot,help -- "$@"`
+	if [ $? -ne 0 ] ; then
+		usage 1
+	fi
+	eval set -- "$OPTS"
+	while true; do
+		case "$1" in
+			-A|--audio)
+			option="audio-selector"
+			shift
+			;;
+			-a|--airport)
+			option="shairport-sync"
+			shift
+			;;
+			-s|--squeezelite)
+			option="squeezlite"
+			shift
+			;;
+			-l|--librespot)
+			option="librespot"
+			shift
+			;;
+			-h|--help)
+			usage 0
+			;;
+			--)
+			shift
+			break
+			;;
+			*)
+			echo "invalid option [$1]" 1>&2; usage 1
+			break
+			;;
+		esac
+	done
+}
+
+create_audio_selector_service()
+{
+	if [ $# -eq 1 ] ; then
+		port=$1
+	else
+		port=""
+	fi
+	if [ "$(id -u)" -ne 0 ] ; then
+		echo "You are not root" 1>&2
+		exit 1
+	fi
+
+	do_create=0
+	target_dir=/service/audio-selector
+	if [ ! -d /service/audio-selector ] ; then
+		do_create=1
+		target_dir=/service/.audio-selector
+		mkdir -p $target_dir/log
+		mkdir -p $target_dir/variables
 		if [ -n "$port" ] ; then
 			echo $port > $target_dir/variables/PORT
 		else
 			echo 8080 > $target_dir/variables/PORT
 		fi
+	else
+		if [ ! -f $target_dir/variables/PORT ] ; then
+			if [ -n "$port" ] ; then
+				echo $port > $target_dir/variables/PORT
+			else
+				echo 8080 > $target_dir/variables/PORT
+			fi
+		fi
 	fi
-fi
 
-(
-echo "#!/bin/sh"
-echo "set -e"
-echo ""
-echo "exec 2>&1"
-echo "[ -z "\$PORT" ] && PORT=\$(cat ./variables/PORT)"
-echo "home=\$(getent passwd 1000 | awk -F: '{print \$6}')"
-echo "user=\$(getent passwd 1000 | awk -F: '{print \$1}')"
-echo "cd /usr/lib/audio_selector"
-echo "exec setuidgid -es \$user node server.js"
-) > $target_dir/run
-chmod +x $target_dir/run
+	(
+	echo "#!/bin/sh"
+	echo "set -e"
+	echo ""
+	echo "exec 2>&1"
+	echo "[ -z "\$PORT" ] && PORT=\$(cat ./variables/PORT)"
+	echo "home=\$(getent passwd 1000 | awk -F: '{print \$6}')"
+	echo "user=\$(getent passwd 1000 | awk -F: '{print \$1}')"
+	echo "cd /usr/lib/audio_selector"
+	echo "exec setuidgid -es \$user node server.js"
+	) > $target_dir/run
+	chmod +x $target_dir/run
 
-(
-echo "#!/bin/sh"
-echo "exec /usr/bin/setuidgid qmaill \\"
-echo "/usr/sbin/multilog t /var/log/svc/audio-selector"
-) > $target_dir/log/run
-chmod +x $target_dir/log/run
+	(
+	echo "#!/bin/sh"
+	echo "exec /usr/bin/setuidgid qmaill \\"
+	echo "/usr/sbin/multilog t /var/log/svc/audio-selector"
+	) > $target_dir/log/run
+	chmod +x $target_dir/log/run
 
-if [ $do_create -eq 1 ] ; then
-	mv $target_dir /service/audio-selector
-	svps -h
-else
-	svc -r /service/audio-selector
-fi
+	if [ $do_create -eq 1 ] ; then
+		mv $target_dir /service/audio-selector
+		svps -h
+	else
+		svc -r /service/audio-selector
+	fi
+}
 
+create_librespot_service()
+{
+	if [ ! -x /usr/bin/librespot ] ; then
+		if [ -f /etc/debian_version ] ; then
+			sudo apt install librespot -y
+		else
+			dnf -y install librespot
+		fi
+	fi
+	if [ ! -x /usr/bin/librespot ] ; then
+		echo "librespot not installed" 1>&2
+		return 1
+	fi
+	t=$(systemctl is-enabled raspotify)
+	if [ "$t" = "enabled" -o "$t" != "masked" ] ; then
+		systemctl disable raspotify
+		systemctl stop raspotify
+		systemctl mask raspotify
+	fi
+	do_create=0
+	target_dir=/service/librespot
+	if [ ! -d /service/librespot ] ; then
+		do_create=1
+		target_dir=/service/.librespot
+		mkdir -p $target_dir/log
+		mkdir -p $target_dir/variables
+	fi
+	if [ ! -f $target_dir/variables/LIBRESPOT_DEVICE ] ; then
+		t=$(aplay -l | grep "^card" | awk '{print $3}' | head -n 1)
+		echo "hw:$t" > $target_dir/variables/LIBRESPOT_DEVICE
+	fi
+	[ ! -f $target_dir/variables/LIBRESPOT_AUTOPLAY ] && echo "on" > $target_dir/variables/LIBRESPOT_AUTOPLAY
+	[ ! -f $target_dir/variables/LIBRESPOT_BITRATE ] && echo "320" > $target_dir/variables/LIBRESPOT_BITRATE
+	[ ! -f $target_dir/variables/LIBRESPOT_DEVICE_TYPE ] && echo "Speaker" > $target_dir/variables/LIBRESPOT_DEVICE_TYPE
+	[ ! -f $target_dir/variables/LIBRESPOT_DISABLE_AUDIO_CACHE ] && echo "on" > $target_dir/variables/LIBRESPOT_DISABLE_AUDIO_CACHE
+	[ ! -f $target_dir/variables/LIBRESPOT_DISABLE_CREDENTIAL_CACHE ] && echo "on" > $target_dir/variables/LIBRESPOT_DISABLE_CREDENTIAL_CACHE
+	[ ! -f $target_dir/variables/LIBRESPOT_ENABLE_VOLUME_NORMALISATION ] && > $target_dir/variables/LIBRESPOT_ENABLE_VOLUME_NORMALISATION
+	[ ! -f $target_dir/variables/LIBRESPOT_FORMAT ] && echo S32 > $target_dir/variables/LIBRESPOT_FORMAT
+	[ ! -f $target_dir/variables/LIBRESPOT_NAME ] && uname -n > $target_dir/variables/LIBRESPOT_NAME
+	[ ! -f $target_dir/variables/LIBRESPOT_QUIET ] && echo on > $target_dir/variables/LIBRESPOT_QUIET
+	[ ! -f $target_dir/variables/TMPDIR ] && echo /autofs/MDrive/tmp > $target_dir/variables/TMPDIR
+	(
+	echo "#!/bin/sh"
+	echo "#"
+	echo "# use librespot -d ? to get list of audio devices"
+	echo "#"
+	echo "exec 2>&1"
+	echo "device=\$(cat ./variables/LIBRESPOT_DEVICE)"
+	echo "if [ -z \"\$device\" ] ; then"
+	echo "  echo \"Device not configured in LIBRESPOT_DEVICE\" 1>&2"
+	echo "  exit 1"
+	echo "fi"
+	echo "home=\$(getent passwd 1000 | awk -F: '{print \$6}')"
+	echo "user=\$(getent passwd 1000 | awk -F: '{print \$1}')"
+	echo "[ -z \"\$home\" ] && home=\"/home/pi\""
+	echo "[ -z \"\$user\" ] && user=\"pi\""
+	echo "[ -z \"\$LIBRESPOT_DEVICE\" ] && LIBRESPOT_DEVICE=\"\$device\""
+	echo "if [ -f \$home/.audio_selector/alsa_device ] ; then"
+	echo "  t=\$(sed -n 1p \$home/.audio_selector/alsa_device|cut -d= -f2)"
+	echo "  if [ -n \"\$t\" -a \"\$t\" != \"\$LIBRESPOT_DEVICE\" ] ; then"
+	echo "    echo \"Changing audio device to \$t from \$SL_SOUNDCARD\""
+	echo "    echo \$t > ./variables/LIBRESPOT_DEVICE"
+	echo "    LIBRESPOT_DEVICE=\"\$t\""
+	echo "  fi"
+	echo "fi"
+	echo ""
+	echo "echo \"starting librespot on \$LIBRESPOT_DEVICE\""
+	echo "exec /usr/bin/chrt 99 /usr/bin/setuidgid -s \$user \\"
+	echo "  /usr/bin/librespot"
+	) > $target_dir/run
+	chmod +x $target_dir/run
+
+	(
+	echo "#!/bin/sh"
+	echo "exec /usr/bin/setuidgid qmaill \\"
+	echo "/usr/sbin/multilog t /var/log/svc/librespot"
+	) > $target_dir/log/run
+	chmod +x $target_dir/log/run
+
+	if [ $do_create -eq 1 ] ; then
+		mv $target_dir /service/librespot
+		svps -h
+	else
+		svc -r /service/librespot
+	fi
+}
+
+create_squeezelite_service()
+{
+	if [ ! -x /usr/bin/squeezelite ] ; then
+		if [ -f /etc/debian_version ] ; then
+			sudo apt install squeezelite -y
+		elif [ -x /usr/bin/dnf ] ; then
+			sudo dnf -y install squeezelite
+		elif [ -x /usr/bin/yum ] ; then
+			sudo yum -y install squeezelite
+		fi
+	fi
+	if [ ! -x /usr/bin/squeezelite ] ; then
+		echo "squeezelite not installed" 1>&2
+		return 1
+	fi
+	t=$(systemctl is-enabled squeezelite)
+	if [ "$t" = "enabled" -o "$t" != "masked" ] ; then
+		systemctl disable squeezelite
+		systemctl stop squeezelite
+		systemctl mask squeezelite
+	fi
+	do_create=0
+	target_dir=/service/squeezelite
+	if [ ! -d /service/squeezelite ] ; then
+		do_create=1
+		target_dir=/service/.squeezelite
+		mkdir -p $target_dir/log
+		mkdir -p $target_dir/variables
+		t=$(aplay -l | grep "^card" | awk '{print $3}' | head -n 1)
+		echo "hw:$t" > $target_dir/variables/SL_SOUNDCARD
+		echo "60" > $target_dir/variables/TIMEOUT
+	fi
+	(
+	echo "#!/bin/sh"
+	echo "exec 2>&1"
+	echo "#"
+	echo "# use squeezelite -l to list output"
+	echo "# devices"
+	echo "device=\$(cat ./variables/SL_SOUNDCARD)"
+	echo "if [ -z \"\$device\" ] ; then"
+	echo "  echo \"Device not configured in SL_SOUNDCARD\" 1>&2"
+	echo "  exit 1"
+	echo "fi"
+	echo "home=\$(getent passwd 1000 | awk -F: '{print \$6}')"
+	echo "user=\$(getent passwd 1000 | awk -F: '{print \$1}')"
+	echo "[ -z \"\$home\" ] && home=\"/home/pi\""
+	echo "[ -z \"\$user\" ] && user=\"pi\""
+	echo "[ -z \"\$SL_SOUNDCARD\" ] && SL_SOUNDCARD=\"\$device\""
+	echo "extra=\"-b 4096:8192\""
+	echo "if [ -f \$home/.audio_selector/alsa_device ] ; then"
+	echo "  t1=\$(sed -n 1p \$home/.audio_selector/alsa_device|cut -d= -f2)"
+	echo "  t2=\$(sed -n 3p \$home/.audio_selector/alsa_device)"
+	echo "  if [ -n \"\$t1\" -a \"\$t1\" != \"\$SL_SOUNDCARD\" ] ; then"
+	echo "    echo \"Changing audio device to \$t1 from \$SL_SOUNDCARD\""
+	echo "    echo \$t1 > ./variables/SL_SOUNDCARD"
+	echo "    SL_SOUNDCARD=\"\$t1\""
+	echo "  fi"
+	echo "  if [ -n \"\$t2\" -a \"\$t2\" = \"DSD=true\" ] ; then"
+	echo "    extra=\"-D :dsd \$extra\""
+	echo "  fi"
+	echo "fi"
+	echo "echo \"starting squeezelite player on \$SL_SOUNDCARD\""
+	echo "hostname=\"\$(uname -n)\""
+	echo "exec /usr/bin/taskset -c 2,3 /usr/bin/chrt 99 \\"
+	echo "    /usr/bin/setuidgid -s \$user /usr/bin/squeezelite \\"
+	echo "    -o \$SL_SOUNDCARD -n \$hostname -C \$TIMEOUT \$extra"
+	) > $target_dir/run
+	chmod +x $target_dir/run
+
+	(
+	echo "#!/bin/sh"
+	echo "exec /usr/bin/setuidgid qmaill \\"
+	echo "/usr/sbin/multilog t /var/log/svc/squeezelite"
+	) > $target_dir/log/run
+	chmod +x $target_dir/log/run
+
+	if [ $do_create -eq 1 ] ; then
+		mv $target_dir /service/squeezelite
+		svps -h
+	else
+		svc -r /service/squeezelite
+	fi
+}
+
+create_shairport_sync_service()
+{
+	if [ ! -x /usr/bin/shairport-sync ] ; then
+		if [ -f /etc/debian_version ] ; then
+			sudo apt install shairport-sync -y
+		elif [ -x /usr/bin/dnf ] ; then
+			sudo dnf -y install shairport-sync
+		elif [ -x /usr/bin/yum ] ; then
+			sudo yum -y install shairport-sync
+		fi
+	fi
+	t=$(systemctl is-enabled shairport-sync)
+	if [ "$t" = "enabled" -o "$t" != "masked" ] ; then
+		systemctl disable shairport-sync
+		systemctl stop shairport-sync
+		systemctl mask shairport-sync
+	fi
+	do_create=0
+	target_dir=/service/shairport-sync
+	if [ ! -d /service/shairport-sync ] ; then
+		do_create=1
+		target_dir=/service/.shairport-sync
+		mkdir -p $target_dir/log
+		mkdir -p $target_dir/variables
+		t=$(aplay -l | grep "^card" | awk '{print $3}' | head -n 1)
+		echo "hw:$t" > $target_dir/variables/AIRPLAY_DEVICE
+	fi
+	(
+	echo "#!/bin/sh"
+	echo "exec 2>&1"
+	echo "device=\$(cat ./variables/AIRPLAY_DEVICE)"
+	echo "if [ -z \"\$device\" ] ; then"
+	echo "  echo \"Device not configured in AIRPLAY_DEVICE\" 1>&2"
+	echo "  exit 1"
+	echo "fi"
+	echo "[ -z \"\$AIRPLAY_DEVICE\" ] && AIRPLAY_DEVICE=\"\$device\""
+	echo "[ -z \"\$home\" ] && home=\"/home/pi\""
+	echo ""
+	echo "if [ -f \$home/.audio_selector/alsa_device ] ; then"
+	echo "  t=\$(sed -n 1p \$home/.audio_selector/alsa_device|cut -d= -f2)"
+	echo "  if [ -n \"\$t\" -a \"\$t\" != \"\$AIRPLAY_DEVICE\" ] ; then"
+	echo "    echo \"Changing audio device to \$t from \$AIRPLAY_DEVICE\""
+	echo "    echo \$t > ./variables/AIRPLAY_DEVICE"
+	echo "    AIRPLAY_DEVICE=\"\$t\""
+	echo "  fi"
+	echo "fi"
+	echo "echo \"starting shairport-sync on \$AIRPLAY_DEVICE\""
+	echo "exec /usr/bin/chrt 99 setuidgid -es shairport-sync /usr/bin/shairport-sync \\"
+	echo "  -a \"\$(uname -n)-airplay\" -o alsa -- -d \$AIRPLAY_DEVICE"
+	) > $target_dir/run
+	chmod +x $target_dir/run
+
+	(
+	echo "#!/bin/sh"
+	echo "exec /usr/bin/setuidgid qmaill \\"
+	echo "/usr/sbin/multilog t /var/log/svc/shairport-sync"
+	) > $target_dir/log/run
+	chmod +x $target_dir/log/run
+
+	if [ $do_create -eq 1 ] ; then
+		mv $target_dir /service/shairport-sync
+		svps -h
+	else
+		svc -r /service/shairport-sync
+	fi
+}
+
+option="audio-selector"
+process_cmdline "$@"
+case "$option" in
+	audio-selector)
+	[ $# -eq 1 ] && create_audio_selector_service $1 || create_audio_selector_service
+	;;
+	shairport-sync)
+	create_shairport_sync_service
+	;;
+	squeezlite)
+	create_squeezelite_service
+	;;
+	librespot)
+	create_librespot_service
+	;;
+	*)
+	usage
+	;;
+esac
 #
 # $Log: create_service,v $
+# Revision 1.2  2026-07-22 22:00:05+05:30  Cprogrammer
+# updated create_service to create services for librespot, squeezelite an shairport-sync
+#
 # Revision 1.1  2026-07-21 01:20:46+05:30  Cprogrammer
 # Initial revision
 #
