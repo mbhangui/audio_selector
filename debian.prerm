@@ -8,8 +8,9 @@ fi
 
 if [ "$1" = "remove" ] || [ "$1" = "deconfigure" ]; then
     if [ -d /service/audio-selector ]; then
-        svc -dx /service/audio-selector /service/audio_selector/log || true
-        rm -rf /service/audio-selector
+		mv /service/audio-selector /service/.audio-selector
+        svc -dx /service/.audio-selector /service/.audio-selector/log || true
+        rm -rf /service/.audio-selector
     fi
 fi
 
