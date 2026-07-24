@@ -9,7 +9,7 @@ case $1 in
 	;;
 	upgrade)
 	if [ -f /etc/debian_version ] ; then
-		exec sudo env DEBIAN_FRONTEND=noninteractive apt upgrade -y
+		exec sudo env DEBIAN_FRONTEND=noninteractive apt --allow-downgrades upgrade -y
 	else
 		exec sudo dnf -y upgrade
 	fi
