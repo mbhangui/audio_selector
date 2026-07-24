@@ -1,4 +1,4 @@
-// $Id: server.js,v 1.4 2026-07-24 17:31:26+05:30 Cprogrammer Exp mbhangui $
+// $Id: server.js,v 1.5 2026-07-24 23:31:33+05:30 Cprogrammer Exp mbhangui $
 // Part 1
 const express = require('express');
 const { execSync, exec } = require('child_process');
@@ -242,7 +242,7 @@ app.post('/select', (req, res) => {
 
             let shortName = 'AUDIO';
             const shortMatch = device.match(/^card \d+:\s+([a-zA-Z0-9_-]+)\s+\[/);
-            if (shortMatch) shortName = shortMatch;
+            if (shortMatch) shortName = shortMatch[1]
 
             const fileContent = `DEVICE=hw:${shortName}\nCARD_STRING=${device}\nDSD=${isDsd}\n`;
             fs.writeFileSync(OUTPUT_FILE, fileContent, 'utf8');
@@ -638,6 +638,9 @@ server.on('error', (err) => {
 
 
 // $Log: server.js,v $
+// Revision 1.5  2026-07-24 23:31:33+05:30  Cprogrammer
+// fixed alsa device name
+//
 // Revision 1.4  2026-07-24 17:31:26+05:30  Cprogrammer
 // sort service entries according to uptime/downtime values
 //
