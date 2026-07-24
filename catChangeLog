@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: $
+# $Id: catChangeLog,v 1.1 2026-07-25 00:36:28+05:30 Cprogrammer Exp mbhangui $
 #
 option=1
 while test $# -gt 0; do
@@ -218,3 +218,10 @@ elif [ $option -eq 3 ] ; then
 		echo
 	fi
 fi
+
+#
+# $Log: catChangeLog,v $
+# Revision 1.1  2026-07-25 00:36:28+05:30  Cprogrammer
+# Initial revision
+#
+#

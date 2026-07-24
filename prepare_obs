@@ -1,5 +1,7 @@
 #!/bin/sh
 #
+# $Id: prepare_obs,v 1.1 2026-07-25 00:36:10+05:30 Cprogrammer Exp mbhangui $
+#
 # This script prepares artifacts that can be downloaded for openSUSE build service
 # It creates name.tar.gz, debian.tar.gz, name.spec name.changes and PKGBUILD
 #
@@ -46,3 +48,10 @@ tar --exclude='audio-selector.spec' --exclude='audio-selector.dsc' --exclude='de
 	restart update initialize
 cd ..
 /bin/rm -rf $name-$version
+
+#
+# $Log: prepare_obs,v $
+# Revision 1.1  2026-07-25 00:36:10+05:30  Cprogrammer
+# Initial revision
+#
+#

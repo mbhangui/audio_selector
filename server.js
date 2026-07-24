@@ -1,4 +1,4 @@
-// $Id: server.js,v 1.5 2026-07-24 23:31:33+05:30 Cprogrammer Exp mbhangui $
+// $Id: server.js,v 1.6 2026-07-25 00:38:10+05:30 Cprogrammer Exp mbhangui $
 // Part 1
 const express = require('express');
 const { execSync, exec } = require('child_process');
@@ -383,7 +383,7 @@ app.get('/trigger-background-update', (req, res) => {
         console.log(`\n--- [UPDATE HELPER TRIGGER] EXEC FORK RUNNING IN BACKGROUND ---`);
 
         // Spawns shell execution thread natively detached, routing all logs live to the progress file
-        exec(`sudo ${UPDATE_HELPER} update > ${UPDATE_LOG_FILE} 2>&1 && echo "\nRunning system package upgrade installations..." >> ${UPDATE_LOG_FILE} && sudo ${UPDATE_HELPER} upgrade >> ${UPDATE_LOG_FILE} 2>&1`, (err) => {
+        exec(`${UPDATE_HELPER} update > ${UPDATE_LOG_FILE} 2>&1 && echo "\nRunning system package upgrade installations..." >> ${UPDATE_LOG_FILE} && ${UPDATE_HELPER} upgrade >> ${UPDATE_LOG_FILE} 2>&1`, (err) => {
             if (err) {
                 console.error("[BACKGROUND UPDATE FAILURE]:", err.message);
                 fs.appendFileSync(UPDATE_LOG_FILE, `\n\n=== EXEUCTION FAILURE ===\n${err.message}\nSTATUS=FAILED\n`);
@@ -638,6 +638,9 @@ server.on('error', (err) => {
 
 
 // $Log: server.js,v $
+// Revision 1.6  2026-07-25 00:38:10+05:30  Cprogrammer
+// removed sudo when executing update script
+//
 // Revision 1.5  2026-07-24 23:31:33+05:30  Cprogrammer
 // fixed alsa device name
 //
