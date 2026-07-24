@@ -4,3 +4,5 @@ Release 1.0 Start 20/07/2026 End --/--/----
 01. Initial Release
 - 24/07/2022
 02. added --allow-downgrades for debian upgrades
+03. Sort down services in decreasing order of downtime and sort up
+    services in increasing order of uptime

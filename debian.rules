@@ -5,7 +5,9 @@
 override_dh_auto_install:
 	mkdir -p debian/audio-selector/usr/lib/audio_selector
 	cp -r server.js index.html styles.css create_service restart \
-		update node_modules debian/audio-selector/usr/lib/audio_selector/
+		update initialize node_modules \
+		debian/audio-selector/usr/lib/audio_selector/
 	chmod 755 debian/audio-selector/usr/lib/audio_selector/create_service
 	chmod 755 debian/audio-selector/usr/lib/audio_selector/restart
 	chmod 755 debian/audio-selector/usr/lib/audio_selector/update
+	chmod 755 debian/audio-selector/usr/lib/audio_selector/initialize

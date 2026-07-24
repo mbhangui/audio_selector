@@ -42,6 +42,7 @@ set -e
 echo "creating archive $name-$version.tar.gz"
 tar --exclude='audio-selector.spec' --exclude='audio-selector.dsc' --exclude='debian.*' \
 	-czf ../audio-selector-1.0.tar.gz node_modules \
-	server.js index.html styles.css create_service restart update
+	server.js index.html styles.css create_service \
+	restart update initialize
 cd ..
 /bin/rm -rf $name-$version
