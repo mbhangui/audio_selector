@@ -1,6 +1,6 @@
-#!/bin/sh
+#!/usr/bin/sh
 #
-# $Id: restart,v 1.1 2026-07-25 00:31:17+05:30 Cprogrammer Exp $
+# $Id: restart,v 1.2 2026-07-26 01:17:41+05:30 Cprogrammer Exp mbhangui $
 #
 for i in librespot squeezelite shairport-sync
 do
@@ -20,6 +20,9 @@ else
 fi
 #
 # $Log: restart,v $
+# Revision 1.2  2026-07-26 01:17:41+05:30  Cprogrammer
+# replace /bin/sh with /usr/bin/sh
+#
 # Revision 1.1  2026-07-25 00:31:17+05:30  Cprogrammer
 # Initial revision
 #

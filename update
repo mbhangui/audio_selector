@@ -1,13 +1,11 @@
-#!/bin/sh
+#!/usr/bin/sh
 #
-# $Id: update,v 1.6 2026-07-25 23:58:42+05:30 Cprogrammer Exp mbhangui $
+# $Id: update,v 1.7 2026-07-26 01:17:50+05:30 Cprogrammer Exp mbhangui $
 #
 case $1 in
 	update)
 	if [ -f /etc/debian_version ] ; then
 		exec sudo env DEBIAN_FRONTEND=noninteractive apt update -y
-	elif [ -f /usr/bin/dnf ] ; then
-		exec sudo dnf -y update
 	fi
 	;;
 	upgrade)
@@ -19,7 +17,7 @@ case $1 in
 	if [ -f /etc/debian_version ] ; then
 		sudo env DEBIAN_FRONTEND=noninteractive apt --allow-downgrades upgrade -y
 	else
-		sudo dnf -y upgrade
+		sudo dnf -y upgrade --refresh
 	fi
 	ret=$?
 	(
@@ -69,6 +67,9 @@ esac
 
 #
 # $Log: update,v $
+# Revision 1.7  2026-07-26 01:17:50+05:30  Cprogrammer
+# use dnf upgrade ---refresh for upgrade
+#
 # Revision 1.6  2026-07-25 23:58:42+05:30  Cprogrammer
 # copy files only when different
 #
