@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: update,v 1.2 2026-07-25 18:40:58+05:30 Cprogrammer Exp mbhangui $
+# $Id: update,v 1.3 2026-07-25 19:23:29+05:30 Cprogrammer Exp mbhangui $
 #
 case $1 in
 	update)
@@ -13,6 +13,7 @@ case $1 in
 	upgrade)
 	if [ -d /service/audio-selector ] ; then
 		sudo touch /service/audio-selector/.norestart
+		ts_audio1=$(stat -c "%Y" /usr/lib/audio_selector)
 	fi
 	[ -d $HOME/.audio_selector ] && cd $HOME/.audio_selector || (mkdir -p $HOME/.audio_selector && cd $HOME/.audio_selector)
 	if [ -f /etc/debian_version ] ; then
@@ -44,17 +45,27 @@ case $1 in
 		fi
 	done
 	if [ -d /service/audio-selector -a -f /service/audio-selector/.norestart ] ; then
-		echo "Restarting audio-selector service"
-		sudo svc -r /service/audio-selector
-		if [ $? -eq 0 ] ; then
+		ts_audio2=$(stat -c "%Y" /usr/lib/audio_selector)
+		if [ -n "$ts_audio1" -a -n "$ts_audio2" -a $ts_audio2 -gt $ts_audio1 ] ; then
+			echo "Restarting audio-selector service"
+			sudo svc -r /service/audio-selector
+			if [ $? -eq 0 ] ; then
+				sudo /bin/rm -f /service/audio-selector/.norestart
+			fi
+		else
+			echo "No update to audio-selector detected"
 			sudo /bin/rm -f /service/audio-selector/.norestart
 		fi
 	fi
+	exit $ret
 	;;
 esac
 
 #
 # $Log: update,v $
+# Revision 1.3  2026-07-25 19:23:29+05:30  Cprogrammer
+# restart audio-selector only when updated
+#
 # Revision 1.2  2026-07-25 18:40:58+05:30  Cprogrammer
 # update success/failure status in update_progress.log
 #
