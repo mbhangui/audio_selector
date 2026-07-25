@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: update,v 1.3 2026-07-25 19:23:29+05:30 Cprogrammer Exp mbhangui $
+# $Id: update,v 1.4 2026-07-25 21:11:44+05:30 Cprogrammer Exp mbhangui $
 #
 case $1 in
 	update)
@@ -40,6 +40,9 @@ case $1 in
 			ts2=$(stat -c "%Y" /usr/lib/audio_selector/$i)
 			if [ -n "$ts1" -a -n "$ts2" -a $ts2 -gt $ts1 ] ; then
 				echo "Updating script $HOME/.audio_selector/$i"
+				if [ "$i" = "update" ] ; then
+					mv $HOME/.audio_selector/update $HOME/.audio_selector/update.bak.
+				fi
 				cp /usr/lib/audio_selector/$i $HOME/.audio_selector/$i
 			fi
 		fi
@@ -63,6 +66,9 @@ esac
 
 #
 # $Log: update,v $
+# Revision 1.4  2026-07-25 21:11:44+05:30  Cprogrammer
+# rename update script before getting updated
+#
 # Revision 1.3  2026-07-25 19:23:29+05:30  Cprogrammer
 # restart audio-selector only when updated
 #
