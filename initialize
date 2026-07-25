@@ -1,6 +1,6 @@
 #!/usr/bin/sh
 #
-# $Id: initialize,v 1.7 2026-07-26 01:17:34+05:30 Cprogrammer Exp mbhangui $
+# $Id: initialize,v 1.8 2026-07-26 01:58:33+05:30 Cprogrammer Exp mbhangui $
 #
 servicedir="/service"
 home=$(getent passwd 1000|awk -F: '{print $6}')
@@ -30,20 +30,15 @@ done
 if [ ! -f services.list ] ; then
 	echo mpd > services.list
 fi
-created=0
+devices=$(aplay -l 2>/dev/null)
+if [ -z "$devices" ] ; then
+	exit 0
+fi
 list=""
 for i in librespot squeezelite shairport-sync
 do
 	if [ ! -x /usr/bin/$i ] ; then
 		list="$list $i"
-	fi
-	if [ ! -d /service/$i ] ; then
-		created=1
-		t=$(systemctl is-enabled $i)
-		systemctl disable $i
-		systemctl stop $i
-		systemctl mask $i
-		/usr/lib/audio_selector/create_service "--$i"
 	fi
 done
 if [ -n "$list" ] ; then
@@ -54,6 +49,22 @@ if [ -n "$list" ] ; then
 			dnf -y install $list --refresh
 		fi
 fi
+created=0
+list=""
+for i in librespot squeezelite shairport-sync
+do
+	if [ ! -x /usr/bin/$i ] ; then
+		list="$list $i"
+	fi
+	if [ ! -d /service/$i -a -x /usr/bin/$i ] ; then
+		created=1
+		t=$(systemctl is-enabled $i)
+		systemctl disable $i
+		systemctl stop $i
+		systemctl mask $i
+		/usr/lib/audio_selector/create_service "--$i"
+	fi
+done
 if [ $created -eq 1 ] ; then
 	pidfile=""
 	if [ -n "$servicedir" ] ; then
@@ -90,6 +101,9 @@ exit 0
 
 #
 # $Log: initialize,v $
+# Revision 1.8  2026-07-26 01:58:33+05:30  Cprogrammer
+# skip installation if no alsa devices found
+#
 # Revision 1.7  2026-07-26 01:17:34+05:30  Cprogrammer
 # replace /bin/sh with /usr/bin/sh
 #
