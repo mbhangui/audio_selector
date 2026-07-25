@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: update,v 1.5 2026-07-25 22:00:18+05:30 Cprogrammer Exp mbhangui $
+# $Id: update,v 1.6 2026-07-25 23:58:42+05:30 Cprogrammer Exp mbhangui $
 #
 case $1 in
 	update)
@@ -39,11 +39,14 @@ case $1 in
 			ts1=$(stat -c "%Y" $HOME/.audio_selector/$i)
 			ts2=$(stat -c "%Y" /usr/lib/audio_selector/$i)
 			if [ -n "$ts1" -a -n "$ts2" -a $ts2 -gt $ts1 ] ; then
-				echo "Updating script $HOME/.audio_selector/$i"
-				if [ "$i" = "update" ] ; then
-					mv $HOME/.audio_selector/update $HOME/.audio_selector/update.bak.
+				cmp -s $HOME/.audio_selector/$i /usr/lib/audio_selector/$i 2>/dev/null
+				if [ $? -ne 0 ] ; then
+					echo "Updating script $HOME/.audio_selector/$i"
+					if [ "$i" = "update" ] ; then
+						mv $HOME/.audio_selector/update $HOME/.audio_selector/update.bak.
+					fi
+					cp /usr/lib/audio_selector/$i $HOME/.audio_selector/$i
 				fi
-				cp /usr/lib/audio_selector/$i $HOME/.audio_selector/$i
 			fi
 		fi
 	done
@@ -66,6 +69,9 @@ esac
 
 #
 # $Log: update,v $
+# Revision 1.6  2026-07-25 23:58:42+05:30  Cprogrammer
+# copy files only when different
+#
 # Revision 1.5  2026-07-25 22:00:18+05:30  Cprogrammer
 # remove use of tee which caused duplicate output
 #

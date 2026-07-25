@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: initialize,v 1.5 2026-07-25 22:44:23+05:30 Cprogrammer Exp mbhangui $
+# $Id: initialize,v 1.6 2026-07-25 23:58:29+05:30 Cprogrammer Exp mbhangui $
 #
 servicedir="/service"
 home=$(getent passwd 1000|awk -F: '{print $6}')
@@ -15,12 +15,15 @@ do
 	if [ -f $home/.audio_selector/$i -a ! -f $home/.audio_selector/$i.nooverwrite ] ; then
 		ts1=$(stat -c "%Y" $home/.audio_selector/$i)
 		ts2=$(stat -c "%Y" /usr/lib/audio_selector/$i)
-		if [ -n "$ts1" -a -n "$ts2" -a $ts2 -gt $ts1 ] ; then
-			echo "Updating script $home/.audio_selector/$i"
-			if [ "$i" = "initialize" ] ; then
-				mv $home/.audio_selector/update $home/.audio_selector/update.bak.
+		cmp -s $HOME/.audio_selector/$i /usr/lib/audio_selector/$i 2>/dev/null
+		if [ $? -ne 0 ] ; then
+			if [ -n "$ts1" -a -n "$ts2" -a $ts2 -gt $ts1 ] ; then
+				echo "Updating script $home/.audio_selector/$i"
+				if [ "$i" = "initialize" ] ; then
+					mv $home/.audio_selector/update $home/.audio_selector/update.bak.
+				fi
+				cp /usr/lib/audio_selector/$i $home/.audio_selector/$i
 			fi
-			cp /usr/lib/audio_selector/$i $home/.audio_selector/$i
 		fi
 	fi
 done
@@ -87,6 +90,9 @@ exit 0
 
 #
 # $Log: initialize,v $
+# Revision 1.6  2026-07-25 23:58:29+05:30  Cprogrammer
+# copy only when files are different
+#
 # Revision 1.5  2026-07-25 22:44:23+05:30  Cprogrammer
 # added update code for initialize, update, restart
 #
