@@ -1,6 +1,6 @@
 #!/usr/bin/sh
 #
-# $Id: initialize,v 1.8 2026-07-26 01:58:33+05:30 Cprogrammer Exp mbhangui $
+# $Id: initialize,v 1.9 2026-07-26 02:25:04+05:30 Cprogrammer Exp mbhangui $
 #
 servicedir="/service"
 home=$(getent passwd 1000|awk -F: '{print $6}')
@@ -13,8 +13,8 @@ do
 		continue
 	fi
 	if [ -f $home/.audio_selector/$i -a ! -f $home/.audio_selector/$i.nooverwrite ] ; then
-		ts1=$(stat -c "%Y" $home/.audio_selector/$i)
-		ts2=$(stat -c "%Y" /usr/lib/audio_selector/$i)
+		ts1=$(stat -c "%W" $home/.audio_selector/$i)
+		ts2=$(stat -c "%W" /usr/lib/audio_selector/$i)
 		cmp -s $HOME/.audio_selector/$i /usr/lib/audio_selector/$i 2>/dev/null
 		if [ $? -ne 0 ] ; then
 			if [ -n "$ts1" -a -n "$ts2" -a $ts2 -gt $ts1 ] ; then
@@ -101,6 +101,9 @@ exit 0
 
 #
 # $Log: initialize,v $
+# Revision 1.9  2026-07-26 02:25:04+05:30  Cprogrammer
+# use create time
+#
 # Revision 1.8  2026-07-26 01:58:33+05:30  Cprogrammer
 # skip installation if no alsa devices found
 #

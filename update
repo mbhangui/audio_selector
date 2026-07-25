@@ -1,6 +1,6 @@
 #!/usr/bin/sh
 #
-# $Id: update,v 1.7 2026-07-26 01:17:50+05:30 Cprogrammer Exp mbhangui $
+# $Id: update,v 1.8 2026-07-26 02:25:12+05:30 Cprogrammer Exp mbhangui $
 #
 case $1 in
 	update)
@@ -11,7 +11,7 @@ case $1 in
 	upgrade)
 	if [ -d /service/audio-selector ] ; then
 		sudo touch /service/audio-selector/.norestart
-		ts_audio1=$(stat -c "%Y" /usr/lib/audio_selector)
+		ts_audio1=$(stat -c "%W" /usr/lib/audio_selector)
 	fi
 	[ -d $HOME/.audio_selector ] && cd $HOME/.audio_selector || (mkdir -p $HOME/.audio_selector && cd $HOME/.audio_selector)
 	if [ -f /etc/debian_version ] ; then
@@ -34,8 +34,8 @@ case $1 in
 	for i in restart update initialize
 	do
 		if [ -f $HOME/.audio_selector/$i -a ! -f $HOME/.audio_selector/$i.nooverwrite ] ; then
-			ts1=$(stat -c "%Y" $HOME/.audio_selector/$i)
-			ts2=$(stat -c "%Y" /usr/lib/audio_selector/$i)
+			ts1=$(stat -c "%W" $HOME/.audio_selector/$i)
+			ts2=$(stat -c "%W" /usr/lib/audio_selector/$i)
 			if [ -n "$ts1" -a -n "$ts2" -a $ts2 -gt $ts1 ] ; then
 				cmp -s $HOME/.audio_selector/$i /usr/lib/audio_selector/$i 2>/dev/null
 				if [ $? -ne 0 ] ; then
@@ -67,6 +67,9 @@ esac
 
 #
 # $Log: update,v $
+# Revision 1.8  2026-07-26 02:25:12+05:30  Cprogrammer
+# use create time
+#
 # Revision 1.7  2026-07-26 01:17:50+05:30  Cprogrammer
 # use dnf upgrade ---refresh for upgrade
 #
