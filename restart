@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: restart,v 1.1 2026-07-25 00:31:17+05:30 Cprogrammer Exp mbhangui $
+# $Id: restart,v 1.1 2026-07-25 00:31:17+05:30 Cprogrammer Exp $
 #
 for i in librespot squeezelite shairport-sync
 do

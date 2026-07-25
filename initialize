@@ -1,13 +1,89 @@
 #!/bin/sh
 #
-# $Id: initialize,v 1.1 2026-07-25 00:35:29+05:30 Cprogrammer Exp mbhangui $
+# $Id: initialize,v 1.4 2026-07-25 18:37:24+05:30 Cprogrammer Exp mbhangui $
 #
-
-# reserved for future use
+servicedir="/service"
+home=$(getent passwd 1000|awk -F: '{print $6}')
+[ ! -d $home/.audio_selector ] && mkdir -p $home/.audio_selector
+cd $home/.audio_selector
+for i in restart update initialize
+do
+	if [ ! -f $i ] ; then
+		cp /usr/lib/audio_selector/$i .
+	fi
+done
+if [ ! -f services.list ] ; then
+	echo mpd > services.list
+fi
+created=0
+list=""
+for i in librespot squeezelite shairport-sync
+do
+	if [ ! -x /usr/bin/$i ] ; then
+		list="$list $i"
+	fi
+	if [ ! -d /service/$i ] ; then
+		created=1
+		t=$(systemctl is-enabled $i)
+		systemctl disable $i
+		systemctl stop $i
+		systemctl mask $i
+		/usr/lib/audio_selector/create_service "--$i"
+	fi
+done
+if [ -n "$list" ] ; then
+		if [ -f /etc/debian_version ] ; then
+			env DEBIAN_FRONTEND=noninteractive apt update -y && \
+				env DEBIAN_FRONTEND=noninteractive apt install $list
+		elif [ -x /usr/bin/dnf ] ; then
+			dnf -y install $list --refresh
+		fi
+fi
+if [ $created -eq 1 ] ; then
+	pidfile=""
+	if [ -n "$servicedir" ] ; then
+		if [ ! -f $servicedir/.svscan.pid ] ; then
+			echo "$servicedir/.svscan.pid: No such file or directory" 1>&2
+			exit 1
+		fi
+		pidfile=$servicedir/.svscan.pid
+	fi
+	if [ -z "$pidfile" ] ; then
+		if [ -d /run/svscan ] ; then
+			pidfile=/run/svscan/.svscan.pid
+		elif [ -d /var/run/svscan ] ; then
+			pidfile=/var/run/svscan/.svscan.pid
+		else
+			pidfile=/service/.svscan.pid
+		fi
+	fi
+	if [ -f $pidfile ] ; then
+		svpid=$(sed -n '$p' $pidfile)
+	elif [ -x /usr/sbin/pidof ] ; then
+		svpid=$(pidof svscan)
+	elif [ -x /usr/bin/pidof ] ; then
+		svpid=$(pidof svscan)
+	elif [ /usr/bin/pgrep ] ; then
+		svpid=$(pgrep -fn /usr/sbin/svscan)
+	fi
+	if [ -n "$svpid" ] ; then
+		echo "Sending HUP to svscan"
+		sudo kill -1 $svpid
+	fi
+fi
 exit 0
 
 #
 # $Log: initialize,v $
+# Revision 1.4  2026-07-25 18:37:24+05:30  Cprogrammer
+# removed deletion of update_progress.log
+#
+# Revision 1.3  2026-07-25 09:44:16+05:30  Cprogrammer
+# added initialize to copy script list
+#
+# Revision 1.2  2026-07-25 09:40:49+05:30  Cprogrammer
+# install librespot, squeezlite, shairport-sync if missing
+#
 # Revision 1.1  2026-07-25 00:35:29+05:30  Cprogrammer
 # Initial revision
 #

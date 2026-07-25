@@ -6,3 +6,9 @@ Release 1.0 Start 20/07/2026 End --/--/----
 02. added --allow-downgrades for debian upgrades
 03. Sort down services in decreasing order of downtime and sort up
     services in increasing order of uptime
+- 25/07/2022
+04. install librespot, squeezlite, shairport-sync if missing
+05. create_service: restart audio-selector if norestart flag is not present
+06. server.js: remove updation of log file status
+07. initialize: removed deletion of update_progress.log
+08. update: update success/failure status in update_progress.log

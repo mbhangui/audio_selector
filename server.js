@@ -1,4 +1,4 @@
-// $Id: server.js,v 1.6 2026-07-25 00:38:10+05:30 Cprogrammer Exp mbhangui $
+// $Id: server.js,v 1.7 2026-07-25 18:38:53+05:30 Cprogrammer Exp mbhangui $
 // Part 1
 const express = require('express');
 const { execSync, exec } = require('child_process');
@@ -386,10 +386,8 @@ app.get('/trigger-background-update', (req, res) => {
         exec(`${UPDATE_HELPER} update > ${UPDATE_LOG_FILE} 2>&1 && echo "\nRunning system package upgrade installations..." >> ${UPDATE_LOG_FILE} && ${UPDATE_HELPER} upgrade >> ${UPDATE_LOG_FILE} 2>&1`, (err) => {
             if (err) {
                 console.error("[BACKGROUND UPDATE FAILURE]:", err.message);
-                fs.appendFileSync(UPDATE_LOG_FILE, `\n\n=== EXEUCTION FAILURE ===\n${err.message}\nSTATUS=FAILED\n`);
             } else {
                 console.log(`--- [UPDATE HELPER TRIGGER] BACKGROUND COMPLETED CLEANLY ---\n`);
-                fs.appendFileSync(UPDATE_LOG_FILE, `\n\n=== UPDATE COMPLETED SUCCESSFULLY ===\nSTATUS=COMPLETED\n`);
             }
         });
     } catch (err) {
@@ -638,6 +636,9 @@ server.on('error', (err) => {
 
 
 // $Log: server.js,v $
+// Revision 1.7  2026-07-25 18:38:53+05:30  Cprogrammer
+// remove updation of log file status
+//
 // Revision 1.6  2026-07-25 00:38:10+05:30  Cprogrammer
 // removed sudo when executing update script
 //

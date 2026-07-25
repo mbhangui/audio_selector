@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: update,v 1.1 2026-07-25 00:35:40+05:30 Cprogrammer Exp mbhangui $
+# $Id: update,v 1.2 2026-07-25 18:40:58+05:30 Cprogrammer Exp mbhangui $
 #
 case $1 in
 	update)
@@ -11,16 +11,53 @@ case $1 in
 	fi
 	;;
 	upgrade)
+	if [ -d /service/audio-selector ] ; then
+		sudo touch /service/audio-selector/.norestart
+	fi
+	[ -d $HOME/.audio_selector ] && cd $HOME/.audio_selector || (mkdir -p $HOME/.audio_selector && cd $HOME/.audio_selector)
 	if [ -f /etc/debian_version ] ; then
-		exec sudo env DEBIAN_FRONTEND=noninteractive apt --allow-downgrades upgrade -y
+		sudo env DEBIAN_FRONTEND=noninteractive apt --allow-downgrades upgrade -y
 	else
-		exec sudo dnf -y upgrade
+		sudo dnf -y upgrade
+	fi
+	ret=$?
+	(
+	if [ $ret -eq 0 ] ; then
+		echo ""
+		echo "=== UPDATE COMPLETED SUCCESSFULLY ==="
+		echo "STATUS=COMPLETED"
+	else
+		echo ""
+    	echo "=== EXECUTION FAILURE ==="
+		echo "STATUS=FAILED"
+	fi
+	) | tee -a update_progress.log
+	for i in restart update initialize
+	do
+		if [ -f $HOME/.audio_selector/$i -a ! -f $HOME/.audio_selector/$i.nooverwrite ] ; then
+			ts1=$(stat -c "%Y" $HOME/.audio_selector/$i)
+			ts2=$(stat -c "%Y" /usr/lib/audio_selector/$i)
+			if [ -n "$ts1" -a -n "$ts2" -a $ts2 -gt $ts1 ] ; then
+				echo "Updating script $HOME/.audio_selector/$i"
+				cp /usr/lib/audio_selector/$i $HOME/.audio_selector/$i
+			fi
+		fi
+	done
+	if [ -d /service/audio-selector -a -f /service/audio-selector/.norestart ] ; then
+		echo "Restarting audio-selector service"
+		sudo svc -r /service/audio-selector
+		if [ $? -eq 0 ] ; then
+			sudo /bin/rm -f /service/audio-selector/.norestart
+		fi
 	fi
 	;;
 esac
 
 #
 # $Log: update,v $
+# Revision 1.2  2026-07-25 18:40:58+05:30  Cprogrammer
+# update success/failure status in update_progress.log
+#
 # Revision 1.1  2026-07-25 00:35:40+05:30  Cprogrammer
 # Initial revision
 #

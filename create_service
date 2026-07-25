@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: create_service,v 1.2 2026-07-22 22:00:05+05:30 Cprogrammer Exp mbhangui $
+# $Id: create_service,v 1.5 2026-07-25 18:35:37+05:30 Cprogrammer Exp mbhangui $
 #
 
 usage()
@@ -20,7 +20,7 @@ Known values for OPTION are:
 -A | --audio
 Create audio-selector service
 
--a | --airport
+-a | --shairport-sync
 Create shairport-sync service
 
 -s | --squeezelite
@@ -54,7 +54,7 @@ process_cmdline()
 		;;
 	esac
 
-	OPTS=`$getopt -o aAslh --long audio,airport,squeezelite,librespot,help -- "$@"`
+	OPTS=`$getopt -o aAslh --long audio,shairport-sync,squeezelite,librespot,help -- "$@"`
 	if [ $? -ne 0 ] ; then
 		usage 1
 	fi
@@ -65,7 +65,7 @@ process_cmdline()
 			option="audio-selector"
 			shift
 			;;
-			-a|--airport)
+			-a|--shairport-sync)
 			option="shairport-sync"
 			shift
 			;;
@@ -99,10 +99,6 @@ create_audio_selector_service()
 	else
 		port=""
 	fi
-	if [ "$(id -u)" -ne 0 ] ; then
-		echo "You are not root" 1>&2
-		exit 1
-	fi
 
 	do_create=0
 	target_dir=/service/audio-selector
@@ -117,7 +113,14 @@ create_audio_selector_service()
 			echo 8080 > $target_dir/variables/PORT
 		fi
 	else
-		if [ ! -f $target_dir/variables/PORT ] ; then
+		if [ -f $target_dir/variables/PORT ] ; then
+			if [ -n "$port" ] ; then
+				old=$(cat $target_dir/variables/PORT)
+				if [ "$old" -ne "$port" ] ; then
+					echo $port > $target_dir/variables/PORT
+				fi
+			fi
+		else
 			if [ -n "$port" ] ; then
 				echo $port > $target_dir/variables/PORT
 			else
@@ -150,28 +153,15 @@ create_audio_selector_service()
 		mv $target_dir /service/audio-selector
 		svps -h
 	else
-		svc -r /service/audio-selector
+		[ -d /service/audio-selector -a ! -f /service/audio-selector/.norestart ] && svc -r /service/audio-selector
 	fi
 }
 
 create_librespot_service()
 {
 	if [ ! -x /usr/bin/librespot ] ; then
-		if [ -f /etc/debian_version ] ; then
-			sudo apt install librespot -y
-		else
-			dnf -y install librespot
-		fi
-	fi
-	if [ ! -x /usr/bin/librespot ] ; then
 		echo "librespot not installed" 1>&2
 		return 1
-	fi
-	t=$(systemctl is-enabled raspotify)
-	if [ "$t" = "enabled" -o "$t" != "masked" ] ; then
-		systemctl disable raspotify
-		systemctl stop raspotify
-		systemctl mask raspotify
 	fi
 	do_create=0
 	target_dir=/service/librespot
@@ -244,23 +234,8 @@ create_librespot_service()
 create_squeezelite_service()
 {
 	if [ ! -x /usr/bin/squeezelite ] ; then
-		if [ -f /etc/debian_version ] ; then
-			sudo apt install squeezelite -y
-		elif [ -x /usr/bin/dnf ] ; then
-			sudo dnf -y install squeezelite
-		elif [ -x /usr/bin/yum ] ; then
-			sudo yum -y install squeezelite
-		fi
-	fi
-	if [ ! -x /usr/bin/squeezelite ] ; then
 		echo "squeezelite not installed" 1>&2
 		return 1
-	fi
-	t=$(systemctl is-enabled squeezelite)
-	if [ "$t" = "enabled" -o "$t" != "masked" ] ; then
-		systemctl disable squeezelite
-		systemctl stop squeezelite
-		systemctl mask squeezelite
 	fi
 	do_create=0
 	target_dir=/service/squeezelite
@@ -328,19 +303,8 @@ create_squeezelite_service()
 create_shairport_sync_service()
 {
 	if [ ! -x /usr/bin/shairport-sync ] ; then
-		if [ -f /etc/debian_version ] ; then
-			sudo apt install shairport-sync -y
-		elif [ -x /usr/bin/dnf ] ; then
-			sudo dnf -y install shairport-sync
-		elif [ -x /usr/bin/yum ] ; then
-			sudo yum -y install shairport-sync
-		fi
-	fi
-	t=$(systemctl is-enabled shairport-sync)
-	if [ "$t" = "enabled" -o "$t" != "masked" ] ; then
-		systemctl disable shairport-sync
-		systemctl stop shairport-sync
-		systemctl mask shairport-sync
+		echo "shairport-sync not installed" 1>&2
+		return 1
 	fi
 	do_create=0
 	target_dir=/service/shairport-sync
@@ -392,11 +356,20 @@ create_shairport_sync_service()
 	fi
 }
 
+#if [ "$(id -u)" -ne 0 ] ; then
+#	echo "You are not root" 1>&2
+#	exit 1
+#fi
+
 option="audio-selector"
 process_cmdline "$@"
 case "$option" in
 	audio-selector)
-	[ $# -eq 1 ] && create_audio_selector_service $1 || create_audio_selector_service
+	if [ $# -eq 1 ] ; then
+		create_audio_selector_service "$1"
+	else
+		create_audio_selector_service
+	fi
 	;;
 	shairport-sync)
 	create_shairport_sync_service
@@ -413,6 +386,15 @@ case "$option" in
 esac
 #
 # $Log: create_service,v $
+# Revision 1.5  2026-07-25 18:35:37+05:30  Cprogrammer
+# restart audio-selector if norestart flag is not present
+#
+# Revision 1.4  2026-07-25 09:34:05+05:30  Cprogrammer
+# removed installation of librespot, squeezelite, shairport-sync
+#
+# Revision 1.3  2026-07-25 09:29:03+05:30  Cprogrammer
+# skip updating PORT if value is same
+#
 # Revision 1.2  2026-07-22 22:00:05+05:30  Cprogrammer
 # updated create_service to create services for librespot, squeezelite an shairport-sync
 #
