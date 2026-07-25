@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: create_service,v 1.5 2026-07-25 18:35:37+05:30 Cprogrammer Exp mbhangui $
+# $Id: create_service,v 1.6 2026-07-25 20:39:13+05:30 Cprogrammer Exp mbhangui $
 #
 
 usage()
@@ -134,7 +134,7 @@ create_audio_selector_service()
 	echo "set -e"
 	echo ""
 	echo "exec 2>&1"
-	echo "[ -z "\$PORT" ] && PORT=\$(cat ./variables/PORT)"
+	echo "[ -z \"\$PORT\" ] && PORT=\$(cat ./variables/PORT)"
 	echo "home=\$(getent passwd 1000 | awk -F: '{print \$6}')"
 	echo "user=\$(getent passwd 1000 | awk -F: '{print \$1}')"
 	echo "cd /usr/lib/audio_selector"
@@ -386,6 +386,9 @@ case "$option" in
 esac
 #
 # $Log: create_service,v $
+# Revision 1.6  2026-07-25 20:39:13+05:30  Cprogrammer
+# fix for syntax error when PORT is undefined
+#
 # Revision 1.5  2026-07-25 18:35:37+05:30  Cprogrammer
 # restart audio-selector if norestart flag is not present
 #
