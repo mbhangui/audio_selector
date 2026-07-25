@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: update,v 1.4 2026-07-25 21:11:44+05:30 Cprogrammer Exp mbhangui $
+# $Id: update,v 1.5 2026-07-25 22:00:18+05:30 Cprogrammer Exp mbhangui $
 #
 case $1 in
 	update)
@@ -32,7 +32,7 @@ case $1 in
     	echo "=== EXECUTION FAILURE ==="
 		echo "STATUS=FAILED"
 	fi
-	) | tee -a update_progress.log
+	) >> update_progress.log
 	for i in restart update initialize
 	do
 		if [ -f $HOME/.audio_selector/$i -a ! -f $HOME/.audio_selector/$i.nooverwrite ] ; then
@@ -66,6 +66,9 @@ esac
 
 #
 # $Log: update,v $
+# Revision 1.5  2026-07-25 22:00:18+05:30  Cprogrammer
+# remove use of tee which caused duplicate output
+#
 # Revision 1.4  2026-07-25 21:11:44+05:30  Cprogrammer
 # rename update script before getting updated
 #
