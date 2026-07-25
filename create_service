@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: create_service,v 1.7 2026-07-25 21:38:14+05:30 Cprogrammer Exp mbhangui $
+# $Id: create_service,v 1.8 2026-07-25 22:44:09+05:30 Cprogrammer Exp mbhangui $
 #
 
 usage()
@@ -230,6 +230,7 @@ create_librespot_service()
 	else
 		svc -r /service/librespot
 	fi
+	exit 0
 }
 
 create_squeezelite_service()
@@ -299,6 +300,7 @@ create_squeezelite_service()
 	else
 		svc -r /service/squeezelite
 	fi
+	exit 0
 }
 
 create_shairport_sync_service()
@@ -355,12 +357,13 @@ create_shairport_sync_service()
 	else
 		svc -r /service/shairport-sync
 	fi
+	exit 0
 }
 
-#if [ "$(id -u)" -ne 0 ] ; then
-#	echo "You are not root" 1>&2
-#	exit 1
-#fi
+if [ "$(id -u)" -ne 0 ] ; then
+	echo "You are not root" 1>&2
+	exit 1
+fi
 
 option="audio-selector"
 process_cmdline "$@"
@@ -387,6 +390,9 @@ case "$option" in
 esac
 #
 # $Log: create_service,v $
+# Revision 1.8  2026-07-25 22:44:09+05:30  Cprogrammer
+# exit non-zero status
+#
 # Revision 1.7  2026-07-25 21:38:14+05:30  Cprogrammer
 # fix return status
 #

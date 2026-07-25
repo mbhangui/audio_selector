@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: initialize,v 1.4 2026-07-25 18:37:24+05:30 Cprogrammer Exp mbhangui $
+# $Id: initialize,v 1.5 2026-07-25 22:44:23+05:30 Cprogrammer Exp mbhangui $
 #
 servicedir="/service"
 home=$(getent passwd 1000|awk -F: '{print $6}')
@@ -10,6 +10,18 @@ for i in restart update initialize
 do
 	if [ ! -f $i ] ; then
 		cp /usr/lib/audio_selector/$i .
+		continue
+	fi
+	if [ -f $home/.audio_selector/$i -a ! -f $home/.audio_selector/$i.nooverwrite ] ; then
+		ts1=$(stat -c "%Y" $home/.audio_selector/$i)
+		ts2=$(stat -c "%Y" /usr/lib/audio_selector/$i)
+		if [ -n "$ts1" -a -n "$ts2" -a $ts2 -gt $ts1 ] ; then
+			echo "Updating script $home/.audio_selector/$i"
+			if [ "$i" = "initialize" ] ; then
+				mv $home/.audio_selector/update $home/.audio_selector/update.bak.
+			fi
+			cp /usr/lib/audio_selector/$i $home/.audio_selector/$i
+		fi
 	fi
 done
 if [ ! -f services.list ] ; then
@@ -75,6 +87,9 @@ exit 0
 
 #
 # $Log: initialize,v $
+# Revision 1.5  2026-07-25 22:44:23+05:30  Cprogrammer
+# added update code for initialize, update, restart
+#
 # Revision 1.4  2026-07-25 18:37:24+05:30  Cprogrammer
 # removed deletion of update_progress.log
 #
