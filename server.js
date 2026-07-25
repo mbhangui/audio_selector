@@ -1,4 +1,4 @@
-// $Id: server.js,v 1.7 2026-07-25 18:38:53+05:30 Cprogrammer Exp mbhangui $
+// $Id: server.js,v 1.8 2026-07-25 23:35:23+05:30 Cprogrammer Exp mbhangui $
 // Part 1
 const express = require('express');
 const { execSync, exec } = require('child_process');
@@ -123,13 +123,33 @@ function getAlsaCards() {
 
 function fetchSystemServices() {
     let services = [];
+    let excludeList = []; // FIXED: Starts completely empty as requested
 
-    // 1. Read existing directory based services
+    // Load custom exclusions if the user has defined them in ~/.audio_selector/svc_exclude.list
+    const excludeFilePath = path.join(OUTPUT_DIR, 'svc_exclude.list');
+    try {
+        if (fs.existsSync(excludeFilePath)) {
+            const excludeContent = fs.readFileSync(excludeFilePath, 'utf8');
+            excludeContent.split('\n').forEach(line => {
+                const cleanLine = line.trim();
+                if (cleanLine && !cleanLine.startsWith('#')) {
+                    if (!excludeList.includes(cleanLine)) excludeList.push(cleanLine);
+                }
+            });
+        }
+    } catch (e) {
+        console.error("Failed to parse exclusion configurations:", e.message);
+    }
+
+    // 1. Gather Daemontools / Supervise Services
     try {
         if (fs.existsSync(SERVICE_DIR)) {
             fs.readdirSync(SERVICE_DIR).forEach(file => {
                 if (!file.startsWith('.') && fs.statSync(path.join(SERVICE_DIR, file)).isDirectory()) {
-                    services.push({ name: file, type: 'daemontools' });
+                    // FILTER: Only append if the service name is not explicitly blacklisted
+                    if (!excludeList.includes(file)) {
+                        services.push({ name: file, type: 'daemontools' });
+                    }
                 }
             });
         }
@@ -137,7 +157,7 @@ function fetchSystemServices() {
         console.error("Daemontools check failed:", err.message);
     }
 
-    // 2. Read and append service names from ~/.audio_selector/services.list
+    // 2. Gather Systemd Services from services.list
     const listFilePath = path.join(OUTPUT_DIR, 'services.list');
     try {
         if (fs.existsSync(listFilePath)) {
@@ -145,8 +165,7 @@ function fetchSystemServices() {
             content.split('\n').forEach(line => {
                 const cleanLine = line.trim();
                 if (cleanLine && !cleanLine.startsWith('#')) {
-                    // Check to avoid duplicate dropdown entries
-                    if (!services.some(s => s.name === cleanLine)) {
+                    if (!services.some(s => s.name === cleanLine) && !excludeList.includes(cleanLine)) {
                         services.push({ name: cleanLine, type: 'systemd' });
                     }
                 }
@@ -155,6 +174,7 @@ function fetchSystemServices() {
     } catch (err) {
         console.error("Failed to read services.list file:", err.message);
     }
+
     return services;
 }
 
@@ -270,23 +290,22 @@ app.post('/toolbox', (req, res) => {
         return res.status(400).send('Parameters mismatch: Please ensure action and service are selected.');
     }
 
-    // Split the incoming value back into name and supervisor architecture type
     const [serviceName, serviceType] = service.split('|');
     let targetCommand = '';
 
     if (serviceType === 'systemd') {
-        // Map UI commands to systemctl target options
         let systemdAction = '';
         if (action === 'up') systemdAction = 'start';
         else if (action === 'down') systemdAction = 'stop';
         else if (action === 'restart') systemdAction = 'restart';
+
         targetCommand = `sudo systemctl ${systemdAction} ${serviceName}`;
     } else {
-        // Fall back to traditional daemontools commands
         let svcActionFlag = '';
         if (action === 'up') svcActionFlag = '-u';
         else if (action === 'down') svcActionFlag = '-d';
         else if (action === 'restart') svcActionFlag = '-r';
+
         targetCommand = `sudo svc ${svcActionFlag} /service/${serviceName}`;
     }
 
@@ -296,15 +315,48 @@ app.post('/toolbox', (req, res) => {
     const uiBorder = isDark ? '#444444' : '#cccccc';
     const linkColor = isDark ? '#bb86fc' : '#0066cc';
 
-    try {
-        console.log(`\n--- [TOOL BOX TRIGGER] RUNNING: ${targetCommand} ---`);
-        execSync(targetCommand, { stdio: 'inherit' });
-        console.log(`--- [TOOL BOX TRIGGER] FINISHED CLEANLY ---\n`);
+    // Fallback self-action safety check (covers manual overrides or un-excluded edge cases)
+    const isSelfAction = (serviceName === 'audio-selector');
 
-        res.send(getFeedbackHtml("Tool Box Executed!", "#0066cc", `Command run: <code style="background:rgba(0,0,0,0.1); padding:2px 6px; border-radius:4px;">${targetCommand}</code>`, "System daemon control action dispatched cleanly.", uiBg, uiBox, uiText, uiBorder, linkColor));
-    } catch (err) {
-        console.error("[TOOL BOX RUN ERROR]:", err.message);
-        res.status(500).send(`System Command Error: Foreground supervisor execution failure. ${err.message}`);
+    if (isSelfAction) {
+        let userMsg = action === 'restart' ? 'Service is restarting...' : 'Service is shutting down...';
+
+        res.send(getFeedbackHtml(
+            "Action Initialized",
+            "#e65100",
+            `Self-control action detected: <code style="background:rgba(0,0,0,0.1); padding:2px 6px; border-radius:4px;">${targetCommand}</code>`,
+            `${userMsg} Please allow a few seconds before refreshing your browser dashboard.`,
+            uiBg, uiBox, uiText, uiBorder, linkColor
+        ));
+
+        // Defer command processing by 500ms so the HTTP socket connection can close cleanly
+        setTimeout(() => {
+            try {
+                console.log(`\n--- [SELF-ACTION TRIGGER] EXECUTING DEFERRED BACKGROUND CONTROL: ${targetCommand} ---`);
+                execSync(targetCommand, { stdio: 'inherit' });
+            } catch (err) {
+                console.error("[SELF-ACTION TRIGGER FAILURE]:", err.message);
+            }
+        }, 500);
+
+    } else {
+        // Standard blocking loop execution path for independent standalone system daemons
+        try {
+            console.log(`\n--- [TOOL BOX TRIGGER] RUNNING: ${targetCommand} ---`);
+            execSync(targetCommand, { stdio: 'inherit' });
+            console.log(`--- [TOOL BOX TRIGGER] FINISHED CLEANLY ---\n`);
+
+            res.send(getFeedbackHtml(
+                "Tool Box Executed!",
+                "#0066cc",
+                `Command run: <code style="background:rgba(0,0,0,0.1); padding:2px 6px; border-radius:4px;">${targetCommand}</code>`,
+                "Service command dispatched cleanly.",
+                uiBg, uiBox, uiText, uiBorder, linkColor
+            ));
+        } catch (err) {
+            console.error("[TOOL BOX RUN ERROR]:", err.message);
+            res.status(500).send(`System Command Error: Foreground supervisor execution failure. ${err.message}`);
+        }
     }
 });
 
@@ -636,6 +688,10 @@ server.on('error', (err) => {
 
 
 // $Log: server.js,v $
+// Revision 1.8  2026-07-25 23:35:23+05:30  Cprogrammer
+// added exclude list
+// retain the ability to restart audio-selector service
+//
 // Revision 1.7  2026-07-25 18:38:53+05:30  Cprogrammer
 // remove updation of log file status
 //
