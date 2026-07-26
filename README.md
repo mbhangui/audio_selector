@@ -3,7 +3,7 @@ Audio Selector
 
 Select and set default Audio Device for [shairport-sync](https://github.com/mikebrady/shairport-sync), [Librespot](https://github.com/librespot-org/librespot), [Squeezelite](https://lyrion.org/players-and-controllers/squeezelite/).
 
-Some of you like me run multiple DACs on a single computer. You could be running mpd, shairport-sync (for airplay), librespot (for spotify) or squeezelite for Lyrion Music Server or for your device to be an Roon end-piont. The audio device for mpd can be changed easily in the mpd client itself. For rest of the music software mentioned, you need to edit the configuration file and edit the playback device and then restart the software. <b>audio-selector</b> allows you to do that if you are a couch potato/potaato/whatever.
+Some of you like me run multiple DACs on a single computer. You could be running mpd, shairport-sync (for airplay), librespot (for spotify) or squeezelite for Lyrion Music Server or for your device to be an Roon end-piont. The audio device for mpd can be changed easily in the mpd client itself. For rest of the music software mentioned, you need to edit the configuration file and edit the playback device and then restart the software. <b>audio-selector</b> allows you to do that if you are a couch potato/potaato/whatever. <b>audio-selector</b> also allows you to install/update any software, control any daemon, reboot or shutdown your device lazing out on your couch. You don't need to access the beautiful terminal that you are so scared of.
 
 ![ScreenShot](screenshots/mainwindow.png)
 
