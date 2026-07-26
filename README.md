@@ -154,6 +154,44 @@ http://ipaddr:8080
 
 You can change the <b>PORT</b> on which <b>audio-selector</b> runs by editing <u>/service/audio-selector/variables/PORT</u> and restarting the <b>audio-selector</b> service. To restart <b>audio-selector</b> run the command `sudo svc -r /service/audio-selector`.
 
+# Feature List
+
+1. Select Audio Device. The audio selector presents you a list of ALSA devices. You can chose one of the device. If the device supports native DSD, check the box for DSD
+
+2. Service Status - This button when clicked shows you the current state of supervise services. Services that are down are shown at the top with decreasing order of downtime. Service which are up are shown next with increasing order of uptime
+
+3. Install - This button when clicked will ask you to upload a csv file. The installer reads this file and installs software as specfied in the csv list
+
+4. Update - This button when clicked performs system update of your system
+
+5. Reboot - This button when clicked runs the `reboot` command
+
+6. Shutdown - This buttron when clicked runs the `shutdown -h now` command.
+
+## Format for the CSV File for Install
+
+Each field needs to be a comma separated line
+
+<b>`ID-VERSION_ID,BINARY_PATH,Package,systemd-service,supervise_create_script`</b>
+
+Here ID and VERSION_ID comes from the file /etc/os-release. Let us say you want to install librespot for Trixie. The entry would be
+
+<b>`debian-13,/usr/bin/librespot,librespot,librespot.service,/usr/lib/audio_selector/create_service --librespot`</b>
+
+The table below shows the values for Fedora, Debian Trixie and Ubuntu Resolute Racoon
+
+ID-VERSION_ID|BINARY_PATH|Package|systemd_service|supervise_create_script
+-------------|-----------|-------|---------------|-----------------------
+fedora-44|/usr/bin/librespot|librespot|librespot.service|/usr/lib/audio_selector/create_service --librespot
+debian-13|/usr/bin/librespot|librespot|librespot.service|/usr/lib/audio_selector/create_service --librespot
+ubuntu-26.04|/usr/bin/librespot|librespot|librespot.service|/usr/lib/audio_selector/create_service --librespot
+fedora-44|/usr/bin/shairport-sync|shairport-sync|shairport-sync.service|/usr/lib/audio_selector/create_service --shairport-sync
+debian-13|/usr/bin/shairport-sync|shairport-sync|shairport-sync.service|/usr/lib/audio_selector/create_service --shairport-sync
+ubuntu-26.04|/usr/bin/shairport-sync|shairport-sync|shairport-sync.service|/usr/lib/audio_selector/create_service --shairport-sync
+fedora-44|/usr/bin/squeezelite|squeezelite|squeezelite.service|/usr/lib/audio_selector/create_service --squeezelite
+debian-13|/usr/bin/squeezelite|squeezelite|squeezelite.service|/usr/lib/audio_selector/create_service --squeezelite
+ubuntu-26.04|/usr/bin/squeezelite|squeezelite|squeezelite.service|/usr/lib/audio_selector/create_service --squeezelite
+
 # Notes
 
 1. This project has been created with the help of google AI. My own knowledge of writing web based applications is zero.

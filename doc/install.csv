@@ -1,0 +1,9 @@
+fedora-44,/usr/bin/librespot,librespot,librespot.service,/usr/lib/audio_selector/create_service --librespot
+debian-13,/usr/bin/librespot,librespot,librespot.service,/usr/lib/audio_selector/create_service --librespot
+ubuntu-26.04,/usr/bin/librespot,librespot,librespot.service,/usr/lib/audio_selector/create_service --librespot
+fedora-44,/usr/bin/shairport-sync,shairport-sync,shairport-sync.service,/usr/lib/audio_selector/create_service --shairport-sync
+debian-13,/usr/bin/shairport-sync,shairport-sync,shairport-sync.service,/usr/lib/audio_selector/create_service --shairport-sync
+ubuntu-26.04,/usr/bin/shairport-sync,shairport-sync,shairport-sync.service,/usr/lib/audio_selector/create_service --shairport-sync
+fedora-44,/usr/bin/squeezelite,squeezelite,squeezelite.service,/usr/lib/audio_selector/create_service --squeezelite
+debian-13,/usr/bin/squeezelite,squeezelite,squeezelite.service,/usr/lib/audio_selector/create_service --squeezelite
+ubuntu-26.04,/usr/bin/squeezelite,squeezelite,squeezelite.service,/usr/lib/audio_selector/create_service --squeezelite
