@@ -156,17 +156,19 @@ You can change the <b>PORT</b> on which <b>audio-selector</b> runs by editing <u
 
 # Feature List
 
-1. Select Audio Device. The audio selector presents you a list of ALSA devices. You can chose one of the device. If the device supports native DSD, check the box for DSD
+1. Select Audio Device. The audio selector presents you a list of ALSA devices. You can chose one of the device. If the device supports native DSD, check the box for DSD. The default device is set in the file <u>$HOME/.audio_selector/alsa_device</u>. Your service file for any music related software should pick up the device from here. For librespot, squeezelite and shairport-sync, this is automatically picked by the supervised services <u>/service/librespot</u>, <u>/service/squeezelite,</u> <u>/service/shairport-sync</u>. As an example, take a look at <u>/service/librespot/run</u> for how it sets the default device for librespot (Spotify Connect Service).
 
-2. Service Status - This button when clicked shows you the current state of supervise services. Services that are down are shown at the top with decreasing order of downtime. Service which are up are shown next with increasing order of uptime
+2. Restart, Start, Stop Service. This shows you a list box of supervise services and systemd service. You can select any one service from the drop down list and select an approprate radio button to restart, start or stop a service. Supervised services are automatically populated by scanning <u>/service</u> directory. Systemd services are maintained in the file <u>$HOME/.audio\_selector/services.list</u>. You can exclude any supervise service from showing up in the list by creating <u>$HOME/.audio\_selector/sv\_exclude.list</u>.
 
-3. Install - This button when clicked will ask you to upload a csv file. The installer reads this file and installs software as specfied in the csv list
+3. Service Status - This button when clicked shows you the current state of supervise services. Services that are down are shown at the top with decreasing order of downtime. Service which are up are shown next with increasing order of uptime
 
-4. Update - This button when clicked performs system update of your system
+4. Install - This button when clicked will ask you to upload a csv file. The installer reads this file and installs software as specfied in the csv list
 
-5. Reboot - This button when clicked runs the `reboot` command
+5. Update - This button when clicked performs system update of your system
 
-6. Shutdown - This buttron when clicked runs the `shutdown -h now` command.
+6. Reboot - This button when clicked runs the `reboot` command
+
+7. Shutdown - This buttron when clicked runs the `shutdown -h now` command.
 
 ## Format for the CSV File for Install
 
