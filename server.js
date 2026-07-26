@@ -1,4 +1,4 @@
-// $Id: server.js,v 1.8 2026-07-25 23:35:23+05:30 Cprogrammer Exp mbhangui $
+// $Id: server.js,v 1.10 2026-07-26 19:31:31+05:30 Cprogrammer Exp mbhangui $
 // Part 1
 const express = require('express');
 const { execSync, exec } = require('child_process');
@@ -15,6 +15,10 @@ const OUTPUT_DIR = path.join(process.env.HOME, '.audio_selector');
 const OUTPUT_FILE = path.join(OUTPUT_DIR, 'alsa_device');
 const UPDATE_LOG_FILE = path.join(OUTPUT_DIR, 'update_progress.log');
 
+// New platform installation log and file paths
+const INSTALL_LOG_FILE = path.join(OUTPUT_DIR, 'install.log');
+const UPLOAD_CSV_FILE = path.join(OUTPUT_DIR, 'uploaded_targets.csv');
+
 const initLocalPath = path.join(OUTPUT_DIR, 'initialize');
 const initGlobalPath = path.join(SCRIPT_DIR, 'initialize');
 const INITIALIZE_SCRIPT = fs.existsSync(initLocalPath) ? initLocalPath : initGlobalPath;
@@ -27,22 +31,13 @@ const restartLocalPath = path.join(OUTPUT_DIR, 'restart');
 const restartGlobalPath = path.join(SCRIPT_DIR, 'restart');
 const RESTART_SCRIPT = fs.existsSync(restartLocalPath) ? restartLocalPath : restartGlobalPath;
 
-app.use(express.urlencoded({ extended: true }));
+// Dynamic path path path path calculations for the new installer script asset
+const installLocalPath = path.join(OUTPUT_DIR, 'install');
+const installGlobalPath = path.join(SCRIPT_DIR, 'install');
+const INSTALL_HELPER = fs.existsSync(installLocalPath) ? installLocalPath : installGlobalPath;
 
-// Part 2
-console.log(`[STARTUP] Target initialization script path: ${INITIALIZE_SCRIPT}`);
-try {
-    if (fs.existsSync(INITIALIZE_SCRIPT)) {
-        console.log(`[STARTUP] Executing platform initializer block: ${INITIALIZE_SCRIPT}`);
-        execSync(INITIALIZE_SCRIPT, { stdio: 'inherit' });
-        console.log(`[STARTUP] Initialization sequence completed cleanly.`);
-    } else {
-        console.log(`[STARTUP] Notice: No initialization script found. Skipping...`);
-    }
-} catch (startupErr) {
-    console.error(`\n[CRITICAL STARTUP ERROR] Initialization failed:`, startupErr.message);
-    process.exit(1);
-}
+// Form handling configuration for processing CSV multipart uploads natively
+app.use(express.urlencoded({ extended: true }));
 
 function formatDurationFromSeconds(totalSeconds) {
     if (isNaN(totalSeconds) || totalSeconds <= 0) return '0s';
@@ -281,6 +276,45 @@ app.post('/select', (req, res) => {
     }
 });
 
+app.post('/sys-install-upload', (req, res) => {
+    const isDark = req.query.theme === 'dark';
+    let bodyBuffers = [];
+
+    req.on('data', chunk => { bodyBuffers.push(chunk); });
+    req.on('end', () => {
+        try {
+            const fullBody = Buffer.concat(bodyBuffers);
+            const contentType = req.headers['content-type'];
+            const boundaryMatch = contentType.match(/boundary=(.+)$/);
+            if (!boundaryMatch) return res.status(400).send('Malformed multipart request.');
+
+            const boundary = '--' + boundaryMatch[1];
+            const bodyStr = fullBody.toString('binary');
+            const parts = bodyStr.split(boundary);
+
+            let csvContent = '';
+            for (let i = 0; i < parts.length; i++) {
+                if (parts[i].includes('name="csvFile"')) {
+                    const lines = parts[i].split('\r\n');
+                    const headerGapIndex = lines.findIndex((line, idx) => idx > 0 && line === '');
+                    if (headerGapIndex !== -1) {
+                        csvContent = lines.slice(headerGapIndex + 1, lines.length - 1).join('\r\n');
+                        break;
+                    }
+                }
+            }
+
+            if (!csvContent.trim()) return res.status(400).send('Upload Error: File appears empty.');
+
+            if (!fs.existsSync(OUTPUT_DIR)) fs.mkdirSync(OUTPUT_DIR, { recursive: true });
+            fs.writeFileSync(UPLOAD_CSV_FILE, csvContent, 'binary');
+            res.status(200).send('OK');
+        } catch (err) {
+            res.status(500).send('Failed to process upload sequence.');
+        }
+    });
+});
+
 // Part 7
 app.post('/toolbox', (req, res) => {
     const { action, service, theme } = req.body;
@@ -357,6 +391,112 @@ app.post('/toolbox', (req, res) => {
             console.error("[TOOL BOX RUN ERROR]:", err.message);
             res.status(500).send(`System Command Error: Foreground supervisor execution failure. ${err.message}`);
         }
+    }
+});
+
+// Part C: Asynchronous Progress Polling Infrastructure (/install-loading & /poll-install-logs)
+app.get('/install-loading', (req, res) => {
+    const isDark = req.query.theme === 'dark';
+    const uiBg = isDark ? '#121212' : '#f4f6f9';
+    const uiText = isDark ? '#e0e0e0' : '#333333';
+    const uiBox = isDark ? '#1e1e1e' : '#ffffff';
+    const uiBorder = isDark ? '#444444' : '#cccccc';
+    const linkColor = isDark ? '#bb86fc' : '#0066cc';
+
+    res.send(`
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8"><title>System Installation Progress</title>
+            <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns=%27http://w3.org viewBox=%270 0 16 16%27><circle cx=%278%27 cy=%278%27 r=%278%27 fill=%27%230066cc%27/><rect x=%273%27 y=%275%27 width=%271.5%27 height=%276%27 fill=%27%23ffffff%27 rx=%270.5%27/><rect x=%276%27 y=%273%27 width=%271.5%27 height=%2710%27 fill=%27%23ffffff%27 rx=%270.5%27/><rect x=%279%27 y=%274%27 width=%271.5%27 height=%278%27 fill=%27%23ffffff%27 rx=%270.5%27/><rect x=%2712%27 y=%276%27 width=%271.5%27 height=%274%27 fill=%27%23ffffff%27 rx=%270.5%27/></svg>">
+        </head>
+        <body style="font-family:-apple-system, sans-serif; background-color:${uiBg}; color:${uiText}; padding:40px; text-align:center;">
+            <div style="background:${uiBox}; padding:25px; display:inline-block; border-radius:8px; border:2px solid ${uiBorder}; width:90%; max-width:900px; text-align:left;">
+                <h3 id="statusTitle" style="color:#673ab7; margin-top:0;">Please wait. Running System Installation...</h3>
+                <div id="loadingIndicator" style="font-size: 1rem; color: #888; margin-bottom: 15px;">Executing background package processes.</div>
+                <div>
+                    <pre id="terminalBox" style="background:#000; color:#b388ff; padding:15px; border-radius:6px; font-family:monospace; max-height:500px; overflow-y:auto; white-space:pre-wrap;"></pre>
+                    <a id="backBtn" href="/" style="color:${linkColor}; text-decoration:none; font-weight:bold; display:none; text-align:center; margin-top:20px;">← Return to Dashboard</a>
+                </div>
+            </div>
+            <script>
+                fetch('/run-installation-worker')
+                    .then(() => {
+                        const pollInterval = setInterval(() => {
+                            fetch('/poll-install-logs')
+                                .then(res => res.json())
+                                .then(data => {
+                                    document.getElementById('terminalBox').innerText = data.output;
+                                    const box = document.getElementById('terminalBox');
+                                    box.scrollTop = box.scrollHeight;
+                                    if (data.status === 'completed') {
+                                        clearInterval(pollInterval);
+                                        document.getElementById('statusTitle').innerText = 'Installation Completed';
+                                        document.getElementById('statusTitle').style.color = '#4caf50';
+                                        document.getElementById('loadingIndicator').style.display = 'none';
+                                        document.getElementById('backBtn').style.display = 'block';
+                                    } else if (data.status === 'failed') {
+                                        clearInterval(pollInterval);
+                                        document.getElementById('statusTitle').innerText = 'Installation Failed';
+                                        document.getElementById('statusTitle').style.color = '#f44336';
+                                        document.getElementById('terminalBox').style.color = '#ff8a80';
+                                        document.getElementById('loadingIndicator').style.display = 'none';
+                                        document.getElementById('backBtn').style.display = 'block';
+                                    }
+                                });
+                        }, 2000);
+                    });
+            </script>
+        </body>
+        </html>
+    `);
+});
+
+app.get('/poll-install-logs', (req, res) => {
+    let output = "Initializing log tracking array...";
+    let status = 'running';
+    try {
+        if (fs.existsSync(INSTALL_LOG_FILE)) {
+            output = fs.readFileSync(INSTALL_LOG_FILE, 'utf8');
+            if (output.includes('STATUS=COMPLETED')) {
+                status = 'completed';
+                output = output.replace('STATUS=COMPLETED', '');
+            } else if (output.includes('STATUS=FAILED')) {
+                status = 'failed';
+                output = output.replace('STATUS=FAILED', '');
+            }
+        }
+    } catch (e) { output = e.message; }
+    res.json({ status: status, output: output });
+});
+
+// Part D: Dynamic Cross-Distribution Dependency Logic (/run-installation-worker)
+app.get('/run-installation-worker', (req, res) => {
+    // Send immediate response back to browser to instantly break network timeout traps
+    res.json({ started: true });
+
+    try {
+        console.log(`\n--- [PACKAGED INSTALL TRIGGER] FORKING EXECUTION TO EXTERNAL SHELL SCRIPT ---`);
+        console.log(`Script Path Evaluated: ${INSTALL_HELPER}`);
+
+        // Fork your shell script completely decoupled in the background shell runtime context
+        exec(`sudo ${INSTALL_HELPER} ${UPLOAD_CSV_FILE}`, (err) => {
+            if (err) {
+                console.error("[BACKGROUND INSTALL RUN FAILURE]:", err.message);
+                // Ensure the progress logger captures the status if the shell execution process itself halts unexpectedly
+                if (fs.existsSync(INSTALL_LOG_FILE)) {
+                    const currentLogs = fs.readFileSync(INSTALL_LOG_FILE, 'utf8');
+                    if (!currentLogs.includes('STATUS=')) {
+                        fs.appendFileSync(INSTALL_LOG_FILE, `\n\nCRITICAL PROCESS FATAL FAILURE:\n${err.message}\nSTATUS=FAILED\n`);
+                    }
+                }
+            } else {
+                console.log(`--- [PACKAGED INSTALL TRIGGER] EXTERNAL SHELL THREAD COMPLETED CLEANLY ---\n`);
+            }
+        });
+    } catch (err) {
+        console.error("[PACKAGED INSTALL FATAL INIT]:", err.message);
+        fs.writeFileSync(INSTALL_LOG_FILE, `CRITICAL WORKER INIT FAILURE:\n${err.message}\nSTATUS=FAILED\n`, 'utf8');
     }
 });
 
@@ -688,6 +828,12 @@ server.on('error', (err) => {
 
 
 // $Log: server.js,v $
+// Revision 1.10  2026-07-26 19:31:31+05:30  Cprogrammer
+// fixed template
+//
+// Revision 1.9  2026-07-26 18:48:06+05:30  Cprogrammer
+// added install function
+//
 // Revision 1.8  2026-07-25 23:35:23+05:30  Cprogrammer
 // added exclude list
 // retain the ability to restart audio-selector service

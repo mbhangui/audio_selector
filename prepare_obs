@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: prepare_obs,v 1.1 2026-07-25 00:36:10+05:30 Cprogrammer Exp mbhangui $
+# $Id: prepare_obs,v 1.2 2026-07-26 18:47:53+05:30 Cprogrammer Exp mbhangui $
 #
 # This script prepares artifacts that can be downloaded for openSUSE build service
 # It creates name.tar.gz, debian.tar.gz, name.spec name.changes and PKGBUILD
@@ -45,12 +45,15 @@ echo "creating archive $name-$version.tar.gz"
 tar --exclude='audio-selector.spec' --exclude='audio-selector.dsc' --exclude='debian.*' \
 	-czf ../audio-selector-1.0.tar.gz node_modules \
 	server.js index.html styles.css create_service \
-	restart update initialize
+	restart update initialize install
 cd ..
 /bin/rm -rf $name-$version
 
 #
 # $Log: prepare_obs,v $
+# Revision 1.2  2026-07-26 18:47:53+05:30  Cprogrammer
+# added install script
+#
 # Revision 1.1  2026-07-25 00:36:10+05:30  Cprogrammer
 # Initial revision
 #

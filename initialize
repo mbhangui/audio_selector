@@ -1,6 +1,6 @@
 #!/usr/bin/sh
 #
-# $Id: initialize,v 1.9 2026-07-26 02:25:04+05:30 Cprogrammer Exp mbhangui $
+# $Id: initialize,v 1.10 2026-07-26 18:49:17+05:30 Cprogrammer Exp mbhangui $
 #
 servicedir="/service"
 home=$(getent passwd 1000|awk -F: '{print $6}')
@@ -59,10 +59,14 @@ do
 	if [ ! -d /service/$i -a -x /usr/bin/$i ] ; then
 		created=1
 		t=$(systemctl is-enabled $i)
-		systemctl disable $i
-		systemctl stop $i
-		systemctl mask $i
-		/usr/lib/audio_selector/create_service "--$i"
+		if [ "$t" = "enabled" ] ; then
+			sudo systemctl disable $i
+			sudo systemctl stop $i
+		fi
+		if [ -f /usr/lib/systemd/system/$i.service -o -f /etc/systemd/system/$i.service ] ; then
+			sudo systemctl mask $i
+		fi
+		sudo /usr/lib/audio_selector/create_service "--$i"
 	fi
 done
 if [ $created -eq 1 ] ; then
@@ -101,6 +105,9 @@ exit 0
 
 #
 # $Log: initialize,v $
+# Revision 1.10  2026-07-26 18:49:17+05:30  Cprogrammer
+# use sudo to call systemd, create_service
+#
 # Revision 1.9  2026-07-26 02:25:04+05:30  Cprogrammer
 # use create time
 #

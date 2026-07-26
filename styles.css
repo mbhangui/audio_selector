@@ -76,7 +76,7 @@ body {
 }
 
 .title-right {
-    right: 80px; 
+    right: 80px;
     font-size: 0.95rem;
     font-weight: normal;
     color: var(--text-color);
@@ -205,18 +205,20 @@ select {
 .system-action-grid {
     display: flex;
     flex-direction: row;
-    gap: 10px;
+    gap: 8px;
     margin-top: 20px;
     width: 100%;
     justify-content: space-between;
+    position: relative;
+    z-index: 10;
 }
 
 .system-action-grid button {
     flex: 1;
-    padding: 12px 4px;
+    padding: 12px 2px;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: bold;
     background-color: transparent;
     transition: background-color 0.2s, color 0.2s;
@@ -236,3 +238,32 @@ select {
 
 .shutdown-btn { color: var(--danger-color); border: 1px solid var(--danger-color); }
 .shutdown-btn:hover { background-color: var(--danger-color); color: #ffffff; }
+/* Core appearance metrics matching your purple branding scheme */
+.install-btn {
+    color: #673ab7;
+    border: 1px solid #673ab7;
+}
+
+.install-btn:hover {
+    background-color: #673ab7;
+    color: #ffffff;
+}
+/* 1. Standard color setup for the install action item */
+.system-action-grid .install-btn {
+    color: #673ab7;
+    border: 1px solid #673ab7;
+    background-color: transparent;
+}
+
+/* 2. Combined Specificity Selector forces background color inversion inside Light Mode */
+.system-action-grid .install-btn:hover {
+    background-color: #673ab7 !important;
+    color: #ffffff !important;
+}
+
+/* 3. High-Contrast Dark Mode specific color inversion overrides */
+[data-theme="dark"] .system-action-grid .install-btn:hover {
+    background-color: #bb86fc !important; /* Uses your active dark-theme purple accent tone */
+    color: #1e1e1e !important;
+    border-color: #bb86fc !important;
+}

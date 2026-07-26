@@ -1,5 +1,5 @@
 #
-# $Id: audio-selector.spec.in,v 1.4 2026-07-25 09:45:00+05:30 Cprogrammer Exp mbhangui $
+# $Id: audio-selector.spec.in,v 1.5 2026-07-26 18:47:22+05:30 Cprogrammer Exp mbhangui $
 #
 Name:           audio-selector
 Version:        @version@
@@ -26,7 +26,7 @@ A Node.js web application dashboard running on port 9095 to select ALSA audio ca
 rm -rf %{buildroot}
 mkdir -p %{buildroot}/usr/lib/audio_selector
 cp -r server.js index.html styles.css create_service restart update \
-   initialize node_modules %{buildroot}/usr/lib/audio_selector/
+   initialize install node_modules %{buildroot}/usr/lib/audio_selector/
 
 %post
 argv1=$1
@@ -76,5 +76,6 @@ fi
 %attr(0755,root,root)      /usr/lib/audio_selector/restart
 %attr(0755,root,root)      /usr/lib/audio_selector/update
 %attr(0755,root,root)      /usr/lib/audio_selector/initialize
+%attr(0755,root,root)      /usr/lib/audio_selector/install
 
 %changelog

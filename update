@@ -1,6 +1,6 @@
 #!/usr/bin/sh
 #
-# $Id: update,v 1.8 2026-07-26 02:25:12+05:30 Cprogrammer Exp mbhangui $
+# $Id: update,v 1.9 2026-07-26 18:48:13+05:30 Cprogrammer Exp mbhangui $
 #
 case $1 in
 	update)
@@ -31,7 +31,7 @@ case $1 in
 		echo "STATUS=FAILED"
 	fi
 	) >> update_progress.log
-	for i in restart update initialize
+	for i in restart update initialize install
 	do
 		if [ -f $HOME/.audio_selector/$i -a ! -f $HOME/.audio_selector/$i.nooverwrite ] ; then
 			ts1=$(stat -c "%W" $HOME/.audio_selector/$i)
@@ -67,6 +67,9 @@ esac
 
 #
 # $Log: update,v $
+# Revision 1.9  2026-07-26 18:48:13+05:30  Cprogrammer
+# added install script
+#
 # Revision 1.8  2026-07-26 02:25:12+05:30  Cprogrammer
 # use create time
 #
