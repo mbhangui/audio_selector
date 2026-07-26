@@ -1,4 +1,4 @@
-// $Id: server.js,v 1.10 2026-07-26 19:31:31+05:30 Cprogrammer Exp mbhangui $
+// $Id: server.js,v 1.11 2026-07-26 20:28:59+05:30 Cprogrammer Exp mbhangui $
 // Part 1
 const express = require('express');
 const { execSync, exec } = require('child_process');
@@ -210,6 +210,11 @@ app.get('/', (req, res) => {
     const services = fetchSystemServices();
 
     let template = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
+
+    // FIXED: Appends a dynamic cache-busting version string to the stylesheet link
+    const uniqueVersionHash = Date.now();
+    template = template.replace('href="/styles.css"', `href="/styles.css?v=${uniqueVersionHash}"`);
+
     template = template.replace('%%HOSTNAME%%', hostname).replace('%%LOGO%%', logoSvg);
 
     if (cards.length === 0) {
@@ -828,6 +833,9 @@ server.on('error', (err) => {
 
 
 // $Log: server.js,v $
+// Revision 1.11  2026-07-26 20:28:59+05:30  Cprogrammer
+// add dynamic cache-busting version string to the stylesheet link
+//
 // Revision 1.10  2026-07-26 19:31:31+05:30  Cprogrammer
 // fixed template
 //
