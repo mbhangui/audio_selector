@@ -12,3 +12,5 @@ Release 1.0 Start 20/07/2026 End --/--/----
 06. server.js: remove updation of log file status
 07. initialize: removed deletion of update_progress.log
 08. update: update success/failure status in update_progress.log
+- 27/07/2022
+09. update: fixed timesamp of audio_selector directory

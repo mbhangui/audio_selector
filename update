@@ -1,6 +1,6 @@
 #!/usr/bin/sh
 #
-# $Id: update,v 1.9 2026-07-26 18:48:13+05:30 Cprogrammer Exp mbhangui $
+# $Id: update,v 1.10 2026-07-27 09:39:07+05:30 Cprogrammer Exp mbhangui $
 #
 case $1 in
 	update)
@@ -49,7 +49,7 @@ case $1 in
 		fi
 	done
 	if [ -d /service/audio-selector -a -f /service/audio-selector/.norestart ] ; then
-		ts_audio2=$(stat -c "%Y" /usr/lib/audio_selector)
+		ts_audio2=$(stat -c "%W" /usr/lib/audio_selector)
 		if [ -n "$ts_audio1" -a -n "$ts_audio2" -a $ts_audio2 -gt $ts_audio1 ] ; then
 			echo "Restarting audio-selector service"
 			sudo svc -r /service/audio-selector
@@ -67,6 +67,9 @@ esac
 
 #
 # $Log: update,v $
+# Revision 1.10  2026-07-27 09:39:07+05:30  Cprogrammer
+# fixed timestamp of audio_selector directory
+#
 # Revision 1.9  2026-07-26 18:48:13+05:30  Cprogrammer
 # added install script
 #
