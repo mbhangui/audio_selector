@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: create_service,v 1.8 2026-07-25 22:44:09+05:30 Cprogrammer Exp mbhangui $
+# $Id: create_service,v 1.9 2026-08-02 01:23:43+05:30 Cprogrammer Exp mbhangui $
 #
 
 usage()
@@ -192,7 +192,7 @@ create_librespot_service()
 	echo "# use librespot -d ? to get list of audio devices"
 	echo "#"
 	echo "exec 2>&1"
-	echo "device=\$(cat ./variables/LIBRESPOT_DEVICE)"
+	echo "device=\$(cat ./variables/LIBRESPOT_DEVICE 2>/dev/null)"
 	echo "if [ -z \"\$device\" ] ; then"
 	echo "  echo \"Device not configured in LIBRESPOT_DEVICE\" 1>&2"
 	echo "  exit 1"
@@ -256,10 +256,14 @@ create_squeezelite_service()
 	echo "#"
 	echo "# use squeezelite -l to list output"
 	echo "# devices"
-	echo "device=\$(cat ./variables/SL_SOUNDCARD)"
+	echo "device=\$(cat ./variables/SL_SOUNDCARD 2>/dev/null)"
 	echo "if [ -z \"\$device\" ] ; then"
 	echo "  echo \"Device not configured in SL_SOUNDCARD\" 1>&2"
 	echo "  exit 1"
+	echo "fi"
+	echo "TIMEOUT=\$(cat ./variables/TIMEOUT 2>/dev/null)"
+	echo "if [ -z \"\$TIMEOUT\" ] ; then"
+	echo "  TIMEOUT=60"
 	echo "fi"
 	echo "home=\$(getent passwd 1000 | awk -F: '{print \$6}')"
 	echo "user=\$(getent passwd 1000 | awk -F: '{print \$1}')"
@@ -322,7 +326,7 @@ create_shairport_sync_service()
 	(
 	echo "#!/bin/sh"
 	echo "exec 2>&1"
-	echo "device=\$(cat ./variables/AIRPLAY_DEVICE)"
+	echo "device=\$(cat ./variables/AIRPLAY_DEVICE 2>/dev/null)"
 	echo "if [ -z \"\$device\" ] ; then"
 	echo "  echo \"Device not configured in AIRPLAY_DEVICE\" 1>&2"
 	echo "  exit 1"
@@ -390,6 +394,9 @@ case "$option" in
 esac
 #
 # $Log: create_service,v $
+# Revision 1.9  2026-08-02 01:23:43+05:30  Cprogrammer
+# updated run file for librespot, squeezelite, shairport-sync
+#
 # Revision 1.8  2026-07-25 22:44:09+05:30  Cprogrammer
 # exit non-zero status
 #
