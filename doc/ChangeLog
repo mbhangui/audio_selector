@@ -18,4 +18,5 @@ Release 1.0 Start 20/07/2026 End --/--/----
 10. create_service: updated run file for librespot, squeezelite, shairport-sync
 - 03/08/2026
 11. update: use mtime to trigger service restart
-12: create_service. Use sleep 2 if error occurs in a service
+12. create_service. Use sleep 2 if error occurs in a service
+13. restart service if server.js or node_modules have been update

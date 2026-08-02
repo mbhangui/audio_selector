@@ -1,6 +1,6 @@
 #!/usr/bin/sh
 #
-# $Id: update,v 1.11 2026-08-02 23:56:24+05:30 Cprogrammer Exp mbhangui $
+# $Id: update,v 1.12 2026-08-03 01:13:25+05:30 Cprogrammer Exp mbhangui $
 #
 case $1 in
 	update)
@@ -11,7 +11,8 @@ case $1 in
 	upgrade)
 	if [ -d /service/audio-selector ] ; then
 		sudo touch /service/audio-selector/.norestart
-		ts_audio1=$(stat -c "%Y" /usr/lib/audio_selector)
+		ts_audio1=$(stat -c "%Y" /usr/lib/audio_selector/server.js)
+		ts_node1=$(stat -c "%Y" /usr/lib/audio_selector/node_modules)
 	fi
 	[ -d $HOME/.audio_selector ] && cd $HOME/.audio_selector || (mkdir -p $HOME/.audio_selector && cd $HOME/.audio_selector)
 	if [ -f /etc/debian_version ] ; then
@@ -41,7 +42,7 @@ case $1 in
 				if [ $? -ne 0 ] ; then
 					echo "Updating script $HOME/.audio_selector/$i"
 					if [ "$i" = "update" ] ; then
-						mv $HOME/.audio_selector/update $HOME/.audio_selector/update.bak.
+						mv $HOME/.audio_selector/update $HOME/.audio_selector/update.bak
 					fi
 					cp /usr/lib/audio_selector/$i $HOME/.audio_selector/$i
 				fi
@@ -49,15 +50,23 @@ case $1 in
 		fi
 	done
 	if [ -d /service/audio-selector -a -f /service/audio-selector/.norestart ] ; then
-		ts_audio2=$(stat -c "%Y" /usr/lib/audio_selector)
+		ts_audio2=$(stat -c "%Y" /usr/lib/audio_selector/server.js)
+		ts_node2=$(stat -c "%Y" /usr/lib/audio_selector/node_modules)
+		do_restart=0
 		if [ -n "$ts_audio1" -a -n "$ts_audio2" -a $ts_audio2 -gt $ts_audio1 ] ; then
+			do_restart=1
+		fi
+		if [ -n "$ts_node1" -a -n "$ts_node2" -a $ts_node1 -gt $ts_node2 ] ; then
+			do_restart=1
+		fi
+		if [ $do_restart -eq 1 ] ; then
 			echo "Restarting audio-selector service"
 			sudo svc -r /service/audio-selector
 			if [ $? -eq 0 ] ; then
 				sudo /bin/rm -f /service/audio-selector/.norestart
 			fi
 		else
-			echo "No update to audio-selector detected"
+			echo "No update to audio_selector/server.js or audio_selector/node_modules detected"
 			sudo /bin/rm -f /service/audio-selector/.norestart
 		fi
 	fi
@@ -67,6 +76,9 @@ esac
 
 #
 # $Log: update,v $
+# Revision 1.12  2026-08-03 01:13:25+05:30  Cprogrammer
+# restart service if server.js or node_modules have been updated
+#
 # Revision 1.11  2026-08-02 23:56:24+05:30  Cprogrammer
 # use file modification time instead of birth time
 #
