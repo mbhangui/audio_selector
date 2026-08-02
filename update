@@ -1,6 +1,6 @@
 #!/usr/bin/sh
 #
-# $Id: update,v 1.10 2026-07-27 09:39:07+05:30 Cprogrammer Exp mbhangui $
+# $Id: update,v 1.11 2026-08-02 23:56:24+05:30 Cprogrammer Exp mbhangui $
 #
 case $1 in
 	update)
@@ -11,7 +11,7 @@ case $1 in
 	upgrade)
 	if [ -d /service/audio-selector ] ; then
 		sudo touch /service/audio-selector/.norestart
-		ts_audio1=$(stat -c "%W" /usr/lib/audio_selector)
+		ts_audio1=$(stat -c "%Y" /usr/lib/audio_selector)
 	fi
 	[ -d $HOME/.audio_selector ] && cd $HOME/.audio_selector || (mkdir -p $HOME/.audio_selector && cd $HOME/.audio_selector)
 	if [ -f /etc/debian_version ] ; then
@@ -34,8 +34,8 @@ case $1 in
 	for i in restart update initialize install
 	do
 		if [ -f $HOME/.audio_selector/$i -a ! -f $HOME/.audio_selector/$i.nooverwrite ] ; then
-			ts1=$(stat -c "%W" $HOME/.audio_selector/$i)
-			ts2=$(stat -c "%W" /usr/lib/audio_selector/$i)
+			ts1=$(stat -c "%Y" $HOME/.audio_selector/$i)
+			ts2=$(stat -c "%Y" /usr/lib/audio_selector/$i)
 			if [ -n "$ts1" -a -n "$ts2" -a $ts2 -gt $ts1 ] ; then
 				cmp -s $HOME/.audio_selector/$i /usr/lib/audio_selector/$i 2>/dev/null
 				if [ $? -ne 0 ] ; then
@@ -49,7 +49,7 @@ case $1 in
 		fi
 	done
 	if [ -d /service/audio-selector -a -f /service/audio-selector/.norestart ] ; then
-		ts_audio2=$(stat -c "%W" /usr/lib/audio_selector)
+		ts_audio2=$(stat -c "%Y" /usr/lib/audio_selector)
 		if [ -n "$ts_audio1" -a -n "$ts_audio2" -a $ts_audio2 -gt $ts_audio1 ] ; then
 			echo "Restarting audio-selector service"
 			sudo svc -r /service/audio-selector
@@ -67,6 +67,9 @@ esac
 
 #
 # $Log: update,v $
+# Revision 1.11  2026-08-02 23:56:24+05:30  Cprogrammer
+# use file modification time instead of birth time
+#
 # Revision 1.10  2026-07-27 09:39:07+05:30  Cprogrammer
 # fixed timestamp of audio_selector directory
 #

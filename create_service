@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: create_service,v 1.9 2026-08-02 01:23:43+05:30 Cprogrammer Exp mbhangui $
+# $Id: create_service,v 1.10 2026-08-02 23:56:15+05:30 Cprogrammer Exp mbhangui $
 #
 
 usage()
@@ -195,6 +195,7 @@ create_librespot_service()
 	echo "device=\$(cat ./variables/LIBRESPOT_DEVICE 2>/dev/null)"
 	echo "if [ -z \"\$device\" ] ; then"
 	echo "  echo \"Device not configured in LIBRESPOT_DEVICE\" 1>&2"
+	echo "  sleep 2"
 	echo "  exit 1"
 	echo "fi"
 	echo "home=\$(getent passwd 1000 | awk -F: '{print \$6}')"
@@ -259,6 +260,7 @@ create_squeezelite_service()
 	echo "device=\$(cat ./variables/SL_SOUNDCARD 2>/dev/null)"
 	echo "if [ -z \"\$device\" ] ; then"
 	echo "  echo \"Device not configured in SL_SOUNDCARD\" 1>&2"
+	echo "  sleep 2"
 	echo "  exit 1"
 	echo "fi"
 	echo "TIMEOUT=\$(cat ./variables/TIMEOUT 2>/dev/null)"
@@ -329,6 +331,7 @@ create_shairport_sync_service()
 	echo "device=\$(cat ./variables/AIRPLAY_DEVICE 2>/dev/null)"
 	echo "if [ -z \"\$device\" ] ; then"
 	echo "  echo \"Device not configured in AIRPLAY_DEVICE\" 1>&2"
+	echo "  sleep 2"
 	echo "  exit 1"
 	echo "fi"
 	echo "[ -z \"\$AIRPLAY_DEVICE\" ] && AIRPLAY_DEVICE=\"\$device\""
@@ -394,6 +397,9 @@ case "$option" in
 esac
 #
 # $Log: create_service,v $
+# Revision 1.10  2026-08-02 23:56:15+05:30  Cprogrammer
+# added sleep before error
+#
 # Revision 1.9  2026-08-02 01:23:43+05:30  Cprogrammer
 # updated run file for librespot, squeezelite, shairport-sync
 #

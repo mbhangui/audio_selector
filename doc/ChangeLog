@@ -16,3 +16,6 @@ Release 1.0 Start 20/07/2026 End --/--/----
 09. update: fixed timesamp of audio_selector directory
 - 02/08/2026
 10. create_service: updated run file for librespot, squeezelite, shairport-sync
+- 03/08/2026
+11. update: use mtime to trigger service restart
+12: create_service. Use sleep 2 if error occurs in a service
